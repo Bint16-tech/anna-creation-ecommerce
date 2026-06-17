@@ -1,0 +1,21 @@
+2026-06-02T13:10:17+00:00 DEBUG #7923 - [New Request] GET /wp-admin/admin.php
+2026-06-02T13:10:17+00:00 DEBUG #7923 - GET https://api.woocommerce.com/integrations/ppc/v1/customer/partners/K8SKZ36LQBWXJ/merchant-integrations/
+Response: Array
+(
+    [code] => 404
+    [message] => Not Found
+)
+
+Response Body: {"statusCode":404,"error":"Not Found","message":"Not Found"}
+
+2026-06-02T13:10:17+00:00 WARNING #7923 - [Erreur] Not Found CONTEXT: {"args":{"method":"GET","headers":{"Authorization":"Bearer token","Content-Type":"application/json"}},"response":{"headers":{},"body":"{"statusCode":404,"error":"Not Found","message":"Not Found"}","response":{"code":404,"message":"Not Found"},"cookies":[],"filename":null,"http_response":{"data":null,"headers":null,"status":null}}}
+2026-06-02T13:10:29+00:00 DEBUG #4484 - [New Request] GET /index.php
+2026-06-02T13:10:29+00:00 DEBUG #4484 - GET https://api.woocommerce.com/integrations/ppc/v1/notifications/webhooks
+Response: Array
+(
+    [code] => 404
+    [message] => Not Found
+)
+
+Response Body: {"statusCode":404,"error":"Not Found","message":"Not Found"}
+

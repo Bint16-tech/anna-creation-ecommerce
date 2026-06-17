@@ -1,0 +1,965 @@
+:root { 
+    --primary: #8d6e63; 
+    --bg: #faf6f2; 
+    --seeder-bg: #c0927a;
+    --seeder-sidebar: #f1dfcf;
+    --seeder-text: #3e241a;
+    --warning: #ff5252;
+    --shadow: 0 15px 40px rgba(0,0,0,0.08);
+    --border-radius: 24px;
+}
+
+/* LAYOUT PRINCIPAL */
+.anna-layout {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    justify-content: flex-start;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: var(--seeder-bg);
+    min-height: calc(100vh - var(--admin-bar, 0px));
+    height: calc(100vh - var(--admin-bar, 0px));
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    overflow: hidden;
+}
+
+body.anna-personnalisation-page footer,
+body.anna-personnalisation-page .ct-footer,
+body.anna-personnalisation-page [data-footer],
+body.anna-personnalisation-page .elementor-location-footer,
+body:has(.anna-layout) footer,
+body:has(.anna-layout) .ct-footer,
+body:has(.anna-layout) [data-footer],
+body:has(.anna-layout) .elementor-location-footer {
+    display: none !important;
+}
+
+body.anna-personnalisation-page .hero-section,
+body:has(.anna-layout) .hero-section {
+    display: none !important;
+}
+
+body.anna-personnalisation-page .site-main,
+body.anna-personnalisation-page .entry-content,
+body.anna-personnalisation-page article,
+body.anna-personnalisation-page [data-vertical-spacing],
+body.anna-personnalisation-page .ct-container,
+body.anna-personnalisation-page .ct-container-full,
+body.anna-personnalisation-page .ct-container-narrow,
+body:has(.anna-layout) .site-main,
+body:has(.anna-layout) .entry-content,
+body:has(.anna-layout) article,
+body:has(.anna-layout) [data-vertical-spacing],
+body:has(.anna-layout) .ct-container,
+body:has(.anna-layout) .ct-container-full,
+body:has(.anna-layout) .ct-container-narrow {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+body.anna-personnalisation-page .site-main,
+body:has(.anna-layout) .site-main {
+    --theme-content-vertical-spacing: 0px;
+}
+
+body.anna-personnalisation-page [class*="ct-container"] > article,
+body:has(.anna-layout) [class*="ct-container"] > article {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding-top: 0 !important;
+}
+
+body.anna-personnalisation-page .entry-content > .anna-layout,
+body:has(.anna-layout) .entry-content > .anna-layout {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+body.anna-personnalisation-page #anna-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 2147483647 !important;
+}
+
+body.anna-personnalisation-page #header,
+body.anna-personnalisation-page .ct-header,
+body.anna-personnalisation-page .site-header {
+    z-index: 999999 !important;
+}
+
+/* SIDEBAR */
+.anna-sidebar {
+    width: 313px;
+    background: var(--seeder-sidebar);
+    padding: 48px 19px 24px;
+    border-radius: 0;
+    box-shadow: none;
+    height: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    flex-shrink: 0;
+    color: var(--seeder-text);
+    display: flex;
+    flex-direction: column;
+}
+
+.anna-sidebar h3 {
+    margin: 0 0 18px 0;
+    color: var(--seeder-text);
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.anna-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.anna-sidebar::-webkit-scrollbar-track {
+    background: #eee;
+    border-radius: 10px;
+}
+
+.anna-sidebar::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+/* CANVAS */
+.anna-canvas {
+    position: relative;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    width: min(812px, 68vw);
+    margin: auto;
+    flex-shrink: 0;
+}
+
+.base-image {
+    width: 100%;
+    display: block;
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+.anna-layout[data-product="anneau-dentition"] .anna-canvas {
+    width: min(660px, 56vw);
+}
+
+#drop-zone-text {
+    position: absolute;
+    left: 33%;
+    top: 62%;
+    width: 39%;
+    height: 12%;
+    z-index: 22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5b3728;
+    font-size: clamp(18px, 3vw, 44px);
+    font-weight: 600;
+    letter-spacing: 0;
+    pointer-events: none;
+}
+
+.anna-layout[data-product="anneau-dentition"] #drop-zone-text {
+    display: none;
+}
+
+/* ============================================ */
+/* ZONE CLIP - SUR LA PARTIE RONDE */
+/* ============================================ */
+
+/* Attache-tétine - clip sur le rond */
+.anna-layout[data-product="attache-tetine"] #drop-zone-clip {
+    position: absolute;
+    top: 35%;
+    left: 8%;
+    width: 11%;
+    height: 30%;
+    z-index: 20;
+}
+
+/* Attache-doudou - clip sur le rond */
+.anna-layout[data-product="attache-doudou"] #drop-zone-clip {
+    position: absolute;
+    top: 31%;
+    left: 7.4%;
+    width: 86.5%;
+    height: 36%;
+    z-index: 20;
+}
+
+/* Porte-clé - clip sur le rond */
+.anna-layout[data-product="porte-cle"] #drop-zone-clip,
+.anna-layout[data-product="double-port-cle"] #drop-zone-clip,
+.anna-layout[data-product="double-porte-cle"] #drop-zone-clip {
+    position: absolute;
+    top: 34%;
+    left: 8%;
+    width: 11%;
+    z-index: 20;
+}
+
+.anna-layout[data-product="double-port-cle"] #drop-zone-clip,
+.anna-layout[data-product="double-porte-cle"] #drop-zone-clip {
+    top: 37%;
+    left: 10%;
+    width: 8.6%;
+    height: 34%;
+}
+
+/* Anneau dentition - clip à côté */
+.anna-layout[data-product="anneau-dentition"] #drop-zone-clip {
+    position: absolute;
+    top: 50%;
+    right: -2%;
+    transform: translateY(-50%);
+    width: 11%;
+    z-index: 20;
+}
+
+/* ============================================ */
+/* ZONE MOTIFS - SUR LA BARRE DU MILIEU */
+/* ============================================ */
+
+/* Attache-tétine - barre du milieu */
+.anna-layout[data-product="attache-tetine"] #drop-zone-motifs {
+    position: absolute;
+    top: 44%;
+    left: 24%;
+    width: 52%;
+    height: 13%;
+    z-index: 20;
+}
+
+/* Attache-doudou - barre du milieu */
+.anna-layout[data-product="attache-doudou"] #drop-zone-motifs {
+    position: absolute;
+    top: 44%;
+    left: 24%;
+    width: 54%;
+    height: 13%;
+    z-index: 20;
+}
+
+/* Porte-clé - barre du milieu */
+.anna-layout[data-product="porte-cle"] #drop-zone-motifs,
+.anna-layout[data-product="double-port-cle"] #drop-zone-motifs,
+.anna-layout[data-product="double-porte-cle"] #drop-zone-motifs {
+    position: absolute;
+    top: 44%;
+    left: 24%;
+    width: 53%;
+    height: 13%;
+    z-index: 20;
+}
+
+.anna-layout[data-product="double-port-cle"] #drop-zone-motifs,
+.anna-layout[data-product="double-porte-cle"] #drop-zone-motifs {
+    top: 39%;
+    left: 22%;
+    width: 56%;
+    height: 31%;
+}
+
+/* Anneau dentition - zone entre les tracés du cercle */
+.anna-layout[data-product="anneau-dentition"] #drop-zone-motifs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+}
+
+/* ============================================ */
+/* STYLES DES MOTIFS */
+/* ============================================ */
+
+.item-wrapper {
+    position: absolute;
+    cursor: grab;
+}
+
+.item-wrapper:active {
+    cursor: grabbing;
+}
+
+/* Clip */
+.clip-wrapper {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    width: 100%;
+    cursor: default;
+    overflow: hidden;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+
+.clip-wrapper:active {
+    cursor: default;
+}
+
+.clip-wrapper .img-placed {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+    border-radius: 50%;
+    background: transparent !important;
+    background-image: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.anna-layout[data-product="anneau-dentition"] .clip-wrapper {
+    aspect-ratio: auto;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.anna-layout[data-product="anneau-dentition"] .clip-wrapper .img-placed {
+    height: auto;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.anna-optional-clip-add {
+    position: absolute;
+    left: 86%;
+    top: 0;
+    width: 14%;
+    aspect-ratio: 1;
+    border: 2px dashed rgba(120, 83, 166, 0.7);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    color: #7853a6;
+    font-size: clamp(18px, 2vw, 30px);
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 21;
+}
+
+.anna-optional-clip-add:hover {
+    background: rgba(255,255,255,0.78);
+}
+
+.anna-layout[data-product="attache-doudou"] .anna-optional-clip-add {
+    left: 87%;
+    top: 0;
+    width: 13%;
+}
+
+.anna-layout[data-product="double-port-cle"] .anna-optional-clip-add,
+.anna-layout[data-product="double-porte-cle"] .anna-optional-clip-add {
+    left: 0;
+    top: 53%;
+    width: 100%;
+}
+
+/* Motifs sur la barre */
+.anna-layout[data-product="attache-tetine"] .motif-draggable,
+.anna-layout[data-product="attache-doudou"] .motif-draggable,
+.anna-layout[data-product="porte-cle"] .motif-draggable,
+.anna-layout[data-product="double-port-cle"] .motif-draggable,
+.anna-layout[data-product="double-porte-cle"] .motif-draggable {
+    width: clamp(36px, 4vw, 54px);
+}
+
+/* Motifs sur l'anneau (plus grands) */
+.anna-layout[data-product="anneau-dentition"] .motif-draggable {
+    aspect-ratio: 1;
+    width: clamp(44px, 5.9vw, 66px) !important;
+}
+
+.anna-layout[data-product="anneau-dentition"] .motif-draggable .img-placed {
+    background: transparent;
+    height: 100%;
+    object-fit: contain;
+    padding: 0;
+    border-radius: 15px;
+    box-shadow: none;
+}
+
+.motif-draggable .img-placed {
+    width: 100%;
+    border-radius: 10px;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+/* Bouton supprimer */
+.btn-del {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: var(--warning);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 25;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-del:hover {
+    background: #e60000;
+    transform: scale(1.1);
+}
+
+/* ============================================ */
+/* MODAL */
+/* ============================================ */
+
+.modal {
+    position: fixed;
+    z-index: 2147483647;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    padding: 26px;
+    border-radius: 20px;
+    width: 1200px;
+    max-width: 95vw;
+    height: 80vh;
+    max-height: 80vh;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.close-modal {
+    position: absolute;
+    right: 25px;
+    top: 20px;
+    font-size: 30px;
+    cursor: pointer;
+    transition: 0.2s;
+    color: #999;
+}
+
+.close-modal:hover {
+    color: var(--primary);
+}
+
+.modal-content h2 {
+    margin: 0 44px 18px 0;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+/* Selection clips */
+.clips-selection {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.clip-browser-toolbar {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.clip-count {
+    background: #f9f3ef;
+    border-radius: 999px;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 900;
+    padding: 9px 12px;
+    white-space: nowrap;
+}
+
+.clip-browser {
+    display: grid;
+    flex: 1;
+    gap: 18px;
+    grid-template-columns: 250px minmax(0, 1fr);
+    min-height: 0;
+}
+
+.clip-categories,
+.clip-results {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.clip-categories {
+    border-right: 1px solid #f0e5df;
+    padding-right: 14px;
+}
+
+.clip-results {
+    padding-right: 8px;
+}
+
+.clip-category-button {
+    align-items: center;
+    background: #f9f3ef;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--seeder-text);
+    cursor: pointer;
+    display: flex;
+    font-weight: 800;
+    gap: 10px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    min-height: 42px;
+    padding: 10px 12px;
+    text-align: left;
+    width: 100%;
+}
+
+.clip-category-button span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.clip-category-button strong {
+    align-items: center;
+    background: rgba(141, 110, 99, 0.12);
+    border-radius: 999px;
+    color: var(--primary);
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1;
+    padding: 6px 8px;
+}
+
+.clip-category-button strong small {
+    border-left: 1px solid currentColor;
+    font-size: 11px;
+    font-weight: 900;
+    padding-left: 6px;
+    white-space: nowrap;
+}
+
+.clip-category-button:hover,
+.clip-category-button.is-active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.clip-category-button:hover strong,
+.clip-category-button.is-active strong {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+
+.clip-group {
+    margin-bottom: 22px;
+}
+
+.clip-cat-title {
+    align-items: center;
+    display: flex;
+    font-weight: 900;
+    justify-content: space-between;
+    margin: 0 0 12px 0;
+    padding: 10px 12px;
+    background: #f9f3ef;
+    border-radius: 7px;
+    color: var(--primary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.clip-cat-title strong {
+    color: #8d6e63;
+    flex-shrink: 0;
+    font-size: 12px;
+    margin-left: 12px;
+}
+
+.clip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 15px;
+    margin-bottom: 0;
+    background: transparent !important;
+    background-image: none !important;
+}
+
+.img-opt-clip {
+    width: 100%;
+    aspect-ratio: 1;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.2s;
+    box-shadow: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    object-fit: contain;
+    padding: 0 !important;
+}
+
+.img-opt-clip:hover {
+    transform: scale(1.08);
+    box-shadow: none !important;
+}
+
+.clip-empty-results {
+    align-items: center;
+    background: #f9f3ef;
+    border: 1px dashed #e2d6ce;
+    border-radius: 7px;
+    color: var(--seeder-text);
+    display: flex;
+    font-weight: 800;
+    justify-content: center;
+    min-height: 160px;
+    margin: 0;
+    text-align: center;
+}
+
+.clip-empty-results[hidden],
+.clip-group[hidden],
+.img-opt-clip[hidden] {
+    display: none !important;
+}
+
+/* ============================================ */
+/* MOTIFS DANS SIDEBAR */
+/* ============================================ */
+
+.motifs-section h4 {
+    margin: 20px 0 12px 0;
+    color: var(--seeder-text);
+    font-size: 18px;
+}
+
+.anna-layout[data-product="attache-doudou"] .clip-wrapper {
+    width: 100%;
+}
+
+.motifs-section {
+    flex: 1;
+    min-height: 150px;
+    max-height: none;
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+}
+
+.motifs-section::-webkit-scrollbar {
+    width: 5px;
+}
+
+.motifs-section::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.35);
+    border-radius: 10px;
+}
+
+.motifs-section::-webkit-scrollbar-thumb {
+    background: #ad805f;
+    border-radius: 10px;
+}
+
+.accordion {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border: none;
+    margin-top: 6px;
+    cursor: pointer;
+    background: #ad805f;
+    color: white;
+    border-radius: 7px;
+    font-weight: 700;
+    transition: 0.2s;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.accordion span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.accordion strong {
+    flex-shrink: 0;
+    max-width: 128px;
+    font-size: 12px;
+    line-height: 1.15;
+    text-align: right;
+    color: rgba(255,255,255,0.9);
+}
+
+.accordion:hover {
+    background: #9e765f;
+}
+
+.accordion.active {
+    background: #7853a6;
+    color: white;
+}
+
+.panel {
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 18px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 7px;
+    margin-top: 8px;
+}
+
+.option-img {
+    width: 100%;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+.option-img:hover {
+    transform: scale(1.05);
+    box-shadow: none;
+}
+
+/* Bouton clip */
+.btn-open-clip {
+    width: 100%;
+    padding: 14px;
+    background: #7853a6;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    transition: 0.2s;
+    margin-bottom: 12px;
+}
+
+.btn-open-clip:hover {
+    background: #684696;
+    transform: translateY(-2px);
+}
+
+.anna-field-label {
+    display: block;
+    margin: 0 0 8px;
+    color: var(--seeder-text);
+    font-weight: 700;
+}
+
+.anna-text-input {
+    width: 100%;
+    height: 42px;
+    margin-bottom: 14px;
+    padding: 0 12px;
+    color: var(--seeder-text);
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(62,36,26,0.14);
+    border-radius: 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.anna-checkline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+    color: var(--seeder-text);
+    font-weight: 700;
+}
+
+.anna-actions {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(62,36,26,0.2);
+}
+
+.anna-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: var(--seeder-text);
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.anna-price strong {
+    font-size: 22px;
+}
+
+.btn-reset,
+.btn-add-cart,
+.btn-download {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 9px;
+    padding: 12px 14px;
+    color: #fff;
+    border: 0;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.btn-reset {
+    background: #9d7a69;
+}
+
+.btn-add-cart {
+    background: #8f6f5f;
+}
+
+.btn-download {
+    background: #2f9b45;
+}
+
+.anna-status {
+    min-height: 20px;
+    margin-top: 10px;
+    color: var(--seeder-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.anna-status.is-error {
+    color: #b3261e;
+}
+
+/* Warning */
+.anna-warning {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--warning);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 50px;
+    z-index: 10000;
+    font-weight: bold;
+    display: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .anna-layout {
+        gap: 0;
+        padding: 0;
+        flex-direction: column;
+        align-items: center;
+        height: auto;
+        min-height: calc(100vh - var(--admin-bar, 0px));
+        overflow: visible;
+    }
+    
+    .anna-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        padding: 28px 19px 24px;
+    }
+
+    .motifs-section {
+        max-height: 250px;
+    }
+    
+    .anna-canvas {
+        width: 100%;
+        max-width: 450px;
+        margin: 40px auto;
+    }
+    
+    .modal-content {
+        width: 95vw;
+        height: 80vh;
+        padding: 18px;
+        border-radius: 14px;
+    }
+
+    .modal-content h2 {
+        font-size: 22px;
+        margin-right: 36px;
+    }
+
+    .clip-browser-toolbar {
+        justify-content: flex-start;
+    }
+
+    .clip-browser {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .clip-categories {
+        border-right: 0;
+        border-bottom: 1px solid #f0e5df;
+        display: flex;
+        gap: 8px;
+        max-height: 72px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 0 10px;
+    }
+
+    .clip-category-button {
+        flex: 0 0 auto;
+        margin-bottom: 0;
+        width: auto;
+    }
+
+    .clip-results {
+        padding-right: 0;
+    }
+
+    .clip-grid {
+        grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    }
+}
