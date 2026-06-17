@@ -244,6 +244,25 @@
         return this.usedBarLength() + this.motifPhysicalSize(category) <= available;
     },
 
+    isTeethingRing() {
+        return this.canonicalBarProduct() === 'anneau-dentition';
+    },
+
+    teethingRingLength() {
+        const settings = window.annaData?.physicalSettings || {};
+        const value = parseInt(settings['anneau-dentition'] || '180', 10);
+
+        return value > 0 ? value : 180;
+    },
+
+    canAddMotifOnTeethingRing(category) {
+        if (!this.isTeethingRing()) return true;
+
+        this.syncStateFromDom();
+
+        return this.usedBarLength() + this.motifPhysicalSize(category) <= this.teethingRingLength();
+    },
+
     isDoubleKeychain() {
         return this.canonicalBarProduct() === 'double-porte-cle';
     },
@@ -297,6 +316,10 @@
     },
 
     nextDoubleBarForMotif(category) {
+        return this.doubleKeychainTargetForMotif(category).bar;
+    },
+
+    doubleKeychainTargetForMotif(category) {
         this.syncStateFromDom();
 
         const size = this.motifPhysicalSize(category);
@@ -305,18 +328,24 @@
         const remainingBarTwo = length - this.usedDoubleBarLength(2);
 
         if (remainingBarOne >= size) {
-            return 1;
+            return { bar: 1, message: '' };
         }
 
         if (this.doubleBarCanAcceptAny(1)) {
-            return 0;
+            return {
+                bar: 0,
+                message: 'Veuillez compléter la première barre avant de personnaliser la seconde.'
+            };
         }
 
         if (remainingBarTwo >= size) {
-            return 2;
+            return { bar: 2, message: '' };
         }
 
-        return 0;
+        return {
+            bar: 0,
+            message: 'Impossible d\'ajouter cette fantaisie. La longueur maximale de cette barre est atteinte.'
+        };
     },
 
     placerClip(src, category = '', name = '') {
@@ -424,22 +453,28 @@
             const nextMotifs = this.state.motifs.concat([{ category }]);
 
             if (letterCategories.includes(this.normalize(category)) && this.limitedLetterCategoryCount(nextMotifs) > letterLimit) {
-                this.warning(`Maximum ${letterLimit} éléments pour les lettres blanches et camel.`);
+                this.warning('Maximum 9 lettres autorisées.');
                 return;
             }
         }
 
         let targetBar = 0;
 
-        if (this.isDoubleKeychain()) {
-            targetBar = this.nextDoubleBarForMotif(category);
+        if (this.isTeethingRing()) {
+            if (!this.canAddMotifOnTeethingRing(category)) {
+                this.warning('Impossible d\'ajouter cette fantaisie. L\'espace disponible sur l\'anneau est insuffisant.');
+                return;
+            }
+        } else if (this.isDoubleKeychain()) {
+            const target = this.doubleKeychainTargetForMotif(category);
+            targetBar = target.bar;
 
             if (!targetBar) {
-                this.warning('Espace insuffisant sur la barre.');
+                this.warning(target.message);
                 return;
             }
         } else if (!this.canAddMotifPhysically(category)) {
-            this.warning('Espace insuffisant sur la barre.');
+            this.warning('Impossible d\'ajouter cette fantaisie. La longueur maximale du produit est atteinte.');
             return;
         }
 

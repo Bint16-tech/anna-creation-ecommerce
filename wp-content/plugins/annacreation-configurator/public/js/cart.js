@@ -8,14 +8,23 @@
             const max = typeof this.maxClipCount === 'function' ? this.maxClipCount() : required;
 
             if (config.text.length > this.maxLetters) {
-                return 'Maximum 9 lettres.';
+                return 'Maximum 9 lettres autorisées.';
             }
 
             if (typeof this.limitedLetterCategoryCount === 'function') {
                 const letterLimit = typeof this.letterCategoryLimit === 'function' ? this.letterCategoryLimit() : 9;
 
                 if (this.limitedLetterCategoryCount(config.motifs) > letterLimit) {
-                    return `Maximum ${letterLimit} éléments pour les lettres blanches et camel.`;
+                    return 'Maximum 9 lettres autorisées.';
+                }
+            }
+
+            if (typeof this.hasPhysicalBarLimit === 'function' && this.hasPhysicalBarLimit()) {
+                const length = typeof this.availableBarLength === 'function' ? this.availableBarLength() : 0;
+                const usedLength = typeof this.usedBarLength === 'function' ? this.usedBarLength(config.motifs) : 0;
+
+                if (length > 0 && usedLength > length) {
+                    return 'Impossible d\'ajouter cette fantaisie. La longueur maximale du produit est atteinte.';
                 }
             }
 
@@ -25,7 +34,16 @@
                 const barTwoLength = typeof this.usedDoubleBarLength === 'function' ? this.usedDoubleBarLength(2, config.motifs) : 0;
 
                 if (barOneLength > length || barTwoLength > length) {
-                    return 'Espace insuffisant sur la barre.';
+                    return 'Impossible d\'ajouter cette fantaisie. La longueur maximale de cette barre est atteinte.';
+                }
+            }
+
+            if (typeof this.isTeethingRing === 'function' && this.isTeethingRing()) {
+                const length = typeof this.teethingRingLength === 'function' ? this.teethingRingLength() : 180;
+                const usedLength = typeof this.usedBarLength === 'function' ? this.usedBarLength(config.motifs) : 0;
+
+                if (usedLength > length) {
+                    return 'Impossible d\'ajouter cette fantaisie. L\'espace disponible sur l\'anneau est insuffisant.';
                 }
             }
 
