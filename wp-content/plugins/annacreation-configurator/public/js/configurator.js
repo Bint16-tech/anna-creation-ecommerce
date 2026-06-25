@@ -22,6 +22,7 @@
 
         this.initModal();
         this.initInputs();
+        this.initCanvasResize();
         this.initDrag();
         this.updatePrice();
 
@@ -42,6 +43,24 @@
             });
         }
 
+    },
+
+    initCanvasResize() {
+        if (!this.canvas) return;
+
+        const recalculatePositions = () => this.reposition();
+        const baseImage = this.canvas.querySelector('.base-image');
+
+        if (baseImage && !baseImage.complete) {
+            baseImage.addEventListener('load', recalculatePositions, { once: true });
+        }
+
+        if (typeof ResizeObserver !== 'undefined') {
+            this.canvasResizeObserver = new ResizeObserver(recalculatePositions);
+            this.canvasResizeObserver.observe(this.canvas);
+        } else {
+            window.addEventListener('resize', recalculatePositions);
+        }
     },
 
     initModal() {
@@ -128,8 +147,11 @@
         update();
     },
 
-    warning(msg) {
-        this.setStatus(msg, true);
+    warning(msg, persistStatus = true) {
+        if (persistStatus) {
+            this.setStatus(msg, true);
+        }
+
         let w = document.querySelector('.anna-warning');
         if (!w) {
             w = document.createElement('div');
@@ -249,10 +271,7 @@
     },
 
     teethingRingLength() {
-        const settings = window.annaData?.physicalSettings || {};
-        const value = parseInt(settings['anneau-dentition'] || '180', 10);
-
-        return value > 0 ? value : 180;
+        return 180;
     },
 
     canAddMotifOnTeethingRing(category) {
@@ -268,10 +287,7 @@
     },
 
     doubleBarLength() {
-        const settings = window.annaData?.physicalSettings || {};
-        const value = parseInt(settings['double-porte-cle'] || '160', 10);
-
-        return value > 0 ? value : 160;
+        return 160;
     },
 
     availableMotifPhysicalSizes() {
@@ -298,7 +314,7 @@
     },
 
     smallestAvailableMotifSize() {
-        return Math.min(...this.availableMotifPhysicalSizes());
+        return 12;
     },
 
     doubleBarMotifs(bar, motifs = this.state.motifs) {
@@ -311,31 +327,38 @@
         }, 0);
     },
 
+    remainingDoubleBarLength(bar, motifs = this.state.motifs) {
+        return this.doubleBarLength() - this.usedDoubleBarLength(bar, motifs);
+    },
+
     doubleBarCanAcceptAny(bar = 1) {
-        return this.doubleBarLength() - this.usedDoubleBarLength(bar) >= this.smallestAvailableMotifSize();
+        return this.remainingDoubleBarLength(bar) >= this.smallestAvailableMotifSize();
+    },
+
+    doubleFirstBarIsComplete() {
+        return this.remainingDoubleBarLength(1) < this.smallestAvailableMotifSize();
     },
 
     nextDoubleBarForMotif(category) {
         return this.doubleKeychainTargetForMotif(category).bar;
     },
 
-    doubleKeychainTargetForMotif(category) {
+    doubleKeychainTargetForMotif(category, requestedBar = 0) {
         this.syncStateFromDom();
 
         const size = this.motifPhysicalSize(category);
-        const length = this.doubleBarLength();
-        const remainingBarOne = length - this.usedDoubleBarLength(1);
-        const remainingBarTwo = length - this.usedDoubleBarLength(2);
+        const remainingBarOne = this.remainingDoubleBarLength(1);
+        const remainingBarTwo = this.remainingDoubleBarLength(2);
 
-        if (remainingBarOne >= size) {
-            return { bar: 1, message: '' };
-        }
-
-        if (this.doubleBarCanAcceptAny(1)) {
+        if (requestedBar === 2 && remainingBarOne >= this.smallestAvailableMotifSize()) {
             return {
                 bar: 0,
                 message: 'Veuillez compléter la première barre avant de personnaliser la seconde.'
             };
+        }
+
+        if (remainingBarOne >= size) {
+            return { bar: 1, message: '' };
         }
 
         if (remainingBarTwo >= size) {
@@ -344,7 +367,7 @@
 
         return {
             bar: 0,
-            message: 'Impossible d\'ajouter cette fantaisie. La longueur maximale de cette barre est atteinte.'
+            message: 'Impossible d\'ajouter cette fantaisie. La longueur maximale du produit est atteinte.'
         };
     },
 
@@ -352,12 +375,23 @@
         const zone = document.getElementById('drop-zone-clip');
         if (!zone) return;
 
-        const maxClips = typeof this.maxClipCount === 'function' ? this.maxClipCount() : (this.product === 'attache-doudou' ? 2 : 1);
+        const placementLimits = {
+            'attache-tetine': 1,
+            'attache-doudou': 2,
+            'porte-cle': 1,
+            'double-port-cle': 2,
+            'double-porte-cle': 2
+        };
+        const maxClips = placementLimits[this.product]
+            ?? (typeof this.maxClipCount === 'function' ? this.maxClipCount() : 1);
+        const existingClips = Array.from(zone.querySelectorAll('.clip-wrapper'));
 
-        if (this.state.clips.length >= maxClips) {
+        if (maxClips === 1) {
+            existingClips.forEach((clip) => clip.remove());
+            this.state.clips = [];
+        } else if (existingClips.length >= maxClips) {
+            existingClips[0].remove();
             this.state.clips.shift();
-            const first = zone.querySelector('.clip-wrapper');
-            if (first) first.remove();
         }
 
         const wrapper = document.createElement('div');
@@ -397,9 +431,9 @@
             }
 
             if (this.product === 'attache-doudou') {
-                clip.style.left = index === 0 ? '0' : '87%';
+                clip.style.left = index === 0 ? '0' : '86.3%';
                 clip.style.top = '0%';
-                clip.style.width = '13%';
+                clip.style.width = '13.7%';
                 return;
             }
 
@@ -470,7 +504,7 @@
             targetBar = target.bar;
 
             if (!targetBar) {
-                this.warning(target.message);
+                this.warning(target.message, target.message !== 'Veuillez compléter la première barre avant de personnaliser la seconde.');
                 return;
             }
         } else if (!this.canAddMotifPhysically(category)) {
@@ -483,6 +517,7 @@
         div.setAttribute('data-x', '0');
         div.dataset.category = category;
         div.dataset.name = name;
+        div.dataset.size = String(this.motifPhysicalSize(category));
         if (targetBar) {
             div.dataset.bar = String(targetBar);
         }
@@ -527,48 +562,113 @@
 
     arrangeOnBar(motifs, zone) {
         const zoneRect = zone.getBoundingClientRect();
-        const motifWidth = motifs[0]?.offsetWidth || 60;
-        const gap = 10;
-        const totalWidth = motifs.length * motifWidth + (motifs.length - 1) * gap;
-        const startX = Math.max(5, (zoneRect.width - totalWidth) / 2);
-        const top = Math.max(0, (zoneRect.height - motifWidth) / 2);
+        const motifWidth = this.fitMotifsToTrack(motifs);
+        const layout = this.horizontalBarLayout(motifs.length, motifWidth, zoneRect.width);
 
         motifs.forEach((motif, index) => {
-            const x = startX + index * (motifWidth + gap);
+            const x = layout.startX + index * layout.step;
+            const motifHeight = motif.offsetHeight || motifWidth;
+            const top = (zoneRect.height - motifHeight) / 2;
             motif.style.left = x + 'px';
             motif.style.top = top + 'px';
             motif.style.transform = 'none';
             motif.setAttribute('data-x', x);
+            motif.setAttribute('data-y', top);
         });
+    },
+
+    fitMotifsToTrack(motifs) {
+        let visualWidth = 0;
+
+        Array.from(motifs).forEach((motif) => {
+            motif.style.width = '';
+            motif.style.height = '';
+
+            const preferredWidth = motif.getBoundingClientRect().width || motif.offsetWidth || 60;
+            visualWidth = Math.max(visualWidth, preferredWidth);
+        });
+
+        return visualWidth || 60;
+    },
+
+    horizontalBarLayout(count, motifWidth, availableWidth) {
+        if (count <= 1) {
+            return {
+                startX: Math.max(0, (availableWidth - motifWidth) / 2),
+                step: 0
+            };
+        }
+
+        const preferredStep = motifWidth + 10;
+        const preferredWidth = motifWidth + ((count - 1) * preferredStep);
+
+        if (preferredWidth <= availableWidth) {
+            return {
+                startX: (availableWidth - preferredWidth) / 2,
+                step: preferredStep
+            };
+        }
+
+        return {
+            startX: 0,
+            step: Math.max(0, (availableWidth - motifWidth) / (count - 1))
+        };
+    },
+
+    cssPercentage(element, property, fallback) {
+        const value = parseFloat(getComputedStyle(element).getPropertyValue(property));
+        return Number.isFinite(value) ? value : fallback;
+    },
+
+    physicalBarTracks(zone) {
+        const zoneRect = zone.getBoundingClientRect();
+
+        if (!this.isDoubleKeychain()) {
+            return [{ top: 0, height: zoneRect.height }];
+        }
+
+        return [
+            {
+                top: zoneRect.height * this.cssPercentage(zone, '--anna-bar-1-top', 0) / 100,
+                height: zoneRect.height * this.cssPercentage(zone, '--anna-bar-1-height', 36.07) / 100
+            },
+            {
+                top: zoneRect.height * this.cssPercentage(zone, '--anna-bar-2-top', 63.11) / 100,
+                height: zoneRect.height * this.cssPercentage(zone, '--anna-bar-2-height', 36.89) / 100
+            }
+        ];
     },
 
     arrangeOnDoubleBars(motifs, zone) {
         const zoneRect = zone.getBoundingClientRect();
-        const motifWidth = motifs[0]?.offsetWidth || 60;
-        const gap = 10;
         const rows = [[], []];
+        const tracks = this.physicalBarTracks(zone);
 
         motifs.forEach((motif, index) => {
             if (!motif.dataset.bar) {
                 motif.dataset.bar = String((index % 2) + 1);
+            }
+            if (!motif.dataset.size) {
+                motif.dataset.size = String(this.motifPhysicalSize(motif.dataset.category || ''));
             }
 
             rows[motif.dataset.bar === '2' ? 1 : 0].push(motif);
         });
 
         rows.forEach((row, rowIndex) => {
-            const totalWidth = row.length * motifWidth + Math.max(0, row.length - 1) * gap;
-            const startX = Math.max(5, (zoneRect.width - totalWidth) / 2);
-            const top = rowIndex === 0
-                ? Math.max(0, zoneRect.height * 0.08)
-                : Math.max(0, zoneRect.height * 0.58);
+            const motifWidth = this.fitMotifsToTrack(row);
+            const layout = this.horizontalBarLayout(row.length, motifWidth, zoneRect.width);
+            const track = tracks[rowIndex];
 
             row.forEach((motif, index) => {
-                const x = startX + index * (motifWidth + gap);
+                const x = layout.startX + index * layout.step;
+                const motifHeight = motif.offsetHeight || motifWidth;
+                const top = track.top + (track.height - motifHeight) / 2;
                 motif.style.left = x + 'px';
                 motif.style.top = top + 'px';
                 motif.style.transform = 'none';
                 motif.setAttribute('data-x', x);
+                motif.setAttribute('data-y', top);
             });
         });
     },
@@ -590,10 +690,15 @@
     },
 
     getCircleGuide(rect) {
+        const zone = document.getElementById('drop-zone-motifs');
+        const centerX = zone ? this.cssPercentage(zone, '--anna-ring-center-x', 50.27) : 50.27;
+        const centerY = zone ? this.cssPercentage(zone, '--anna-ring-center-y', 53.25) : 53.25;
+        const radius = zone ? this.cssPercentage(zone, '--anna-ring-radius', 38.65) : 38.65;
+
         return {
-            centerX: rect.width * 0.49,
-            centerY: rect.height * 0.49,
-            radius: Math.min(rect.width, rect.height) * 0.38
+            centerX: rect.width * centerX / 100,
+            centerY: rect.height * centerY / 100,
+            radius: Math.min(rect.width, rect.height) * radius / 100
         };
     },
 
@@ -614,16 +719,31 @@
                 })
             ],
             listeners: {
+                start(event) {
+                    if (self.product === 'anneau-dentition') return;
+
+                    const target = event.target;
+                    target.dataset.dragStartBar = target.dataset.bar || '1';
+                    target.dataset.dragStartX = target.getAttribute('data-x') || '0';
+                    target.dataset.dragStartY = target.getAttribute('data-y') || String(parseFloat(target.style.top) || 0);
+                },
                 move(event) {
                     const target = event.target;
                     if (self.product === 'anneau-dentition') {
                         self.dragOnCircle(event, target);
+                    } else if (self.isDoubleKeychain()) {
+                        self.dragOnDoubleBar(event, target);
                     } else {
                         self.dragOnBar(event, target);
                     }
                     self.syncStateFromDom();
                 },
-                end() {
+                end(event) {
+                    if (self.isDoubleKeychain()) {
+                        self.finishDoubleBarDrag(event.target);
+                    } else if (self.product !== 'anneau-dentition') {
+                        self.finishSingleBarDrag(event.target);
+                    }
                     self.syncStateFromDom();
                     self.updatePrice();
                 }
@@ -635,12 +755,168 @@
         const zone = document.getElementById('drop-zone-motifs');
         const zoneRect = zone.getBoundingClientRect();
         const motifWidth = target.offsetWidth || 60;
+        const motifHeight = target.offsetHeight || motifWidth;
+        const top = (zoneRect.height - motifHeight) / 2;
         let newX = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
 
         newX = Math.max(0, Math.min(zoneRect.width - motifWidth, newX));
         target.style.left = newX + 'px';
+        target.style.top = top + 'px';
         target.style.transform = 'none';
         target.setAttribute('data-x', newX);
+        target.setAttribute('data-y', top);
+    },
+
+    finishSingleBarDrag(target) {
+        const zone = document.getElementById('drop-zone-motifs');
+        if (!zone) return;
+
+        const motifs = Array.from(zone.querySelectorAll('.motif-draggable'));
+        const ordered = this.itemsSortedByX(motifs);
+
+        ordered.forEach((item) => zone.appendChild(item));
+        this.arrangeOnBar(ordered, zone);
+        this.clearDragStart(target);
+    },
+
+    itemsSortedByX(items) {
+        return Array.from(items).sort((a, b) => {
+            const centerA = (parseFloat(a.getAttribute('data-x')) || parseFloat(a.style.left) || 0) + ((a.offsetWidth || 0) / 2);
+            const centerB = (parseFloat(b.getAttribute('data-x')) || parseFloat(b.style.left) || 0) + ((b.offsetWidth || 0) / 2);
+
+            return centerA - centerB;
+        });
+    },
+
+    restoreDraggedItem(target) {
+        const startX = parseFloat(target.dataset.dragStartX || '0') || 0;
+        const startY = parseFloat(target.dataset.dragStartY || '0') || 0;
+        const startBar = target.dataset.dragStartBar || target.dataset.bar || '1';
+
+        target.dataset.bar = startBar;
+        target.style.left = startX + 'px';
+        target.style.top = startY + 'px';
+        target.style.transform = 'none';
+        target.setAttribute('data-x', startX);
+        target.setAttribute('data-y', startY);
+        this.clearDragStart(target);
+    },
+
+    clearDragStart(target) {
+        delete target.dataset.dragStartBar;
+        delete target.dataset.dragStartX;
+        delete target.dataset.dragStartY;
+    },
+
+    dragOnDoubleBar(event, target) {
+        const zone = document.getElementById('drop-zone-motifs');
+        const zoneRect = zone.getBoundingClientRect();
+        const motifWidth = target.offsetWidth || 60;
+        const motifHeight = target.offsetHeight || motifWidth;
+        let newX = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+        let newY = (parseFloat(target.getAttribute('data-y')) || parseFloat(target.style.top) || 0) + event.dy;
+
+        newX = Math.max(0, Math.min(zoneRect.width - motifWidth, newX));
+        newY = Math.max(0, Math.min(zoneRect.height - motifHeight, newY));
+        target.style.left = newX + 'px';
+        target.style.top = newY + 'px';
+        target.style.transform = 'none';
+        target.setAttribute('data-x', newX);
+        target.setAttribute('data-y', newY);
+    },
+
+    doubleBarFromPosition(item) {
+        const zone = document.getElementById('drop-zone-motifs');
+        if (!zone) return Number(item.dataset.bar || 1);
+
+        const tracks = this.physicalBarTracks(zone);
+        const itemTop = parseFloat(item.style.top) || 0;
+        const itemHeight = item.offsetHeight || 0;
+        const itemCenter = itemTop + (itemHeight / 2);
+        const firstCenter = tracks[0].top + (tracks[0].height / 2);
+        const secondCenter = tracks[1].top + (tracks[1].height / 2);
+
+        return Math.abs(itemCenter - secondCenter) < Math.abs(itemCenter - firstCenter) ? 2 : 1;
+    },
+
+    doubleBarTop(bar, motif = null) {
+        const zone = document.getElementById('drop-zone-motifs');
+        if (!zone) return 0;
+
+        const track = this.physicalBarTracks(zone)[Number(bar) === 2 ? 1 : 0];
+        const motifHeight = motif?.offsetHeight || zone.querySelector('.motif-draggable')?.offsetHeight || 60;
+
+        return track.top + (track.height - motifHeight) / 2;
+    },
+
+    snapDoubleBarItemToBar(item, bar) {
+        const top = this.doubleBarTop(bar, item);
+
+        item.style.top = top + 'px';
+        item.style.transform = 'none';
+        item.setAttribute('data-y', top);
+    },
+
+    setItemX(item, x) {
+        item.style.left = x + 'px';
+        item.setAttribute('data-x', x);
+    },
+
+    usedDoubleBarLengthFromDom(bar, excludedItem = null) {
+        return Array.from(document.querySelectorAll('#drop-zone-motifs .motif-draggable')).reduce((total, item) => {
+            if (item === excludedItem || Number(item.dataset.bar || 1) !== bar) {
+                return total;
+            }
+
+            const size = parseInt(item.dataset.size || '0', 10) || this.motifPhysicalSize(item.dataset.category || '');
+            return total + size;
+        }, 0);
+    },
+
+    finishDoubleBarDrag(target) {
+        const verticalThreshold = 40;
+        const originalBar = Number(target.dataset.dragStartBar || target.dataset.bar || 1);
+        const startY = parseFloat(target.dataset.dragStartY || '0') || 0;
+        const currentY = parseFloat(target.getAttribute('data-y')) || parseFloat(target.style.top) || startY;
+        const verticalDelta = currentY - startY;
+        const shouldChangeBar = Math.abs(verticalDelta) >= verticalThreshold;
+        const targetBar = shouldChangeBar
+            ? (verticalDelta > 0 ? 2 : 1)
+            : originalBar;
+        const zone = document.getElementById('drop-zone-motifs');
+
+        if (!shouldChangeBar || targetBar === originalBar) {
+            target.dataset.bar = String(originalBar);
+            this.snapDoubleBarItemToBar(target, originalBar);
+        } else {
+            const targetUsedLength = this.usedDoubleBarLengthFromDom(targetBar, target);
+            const targetSize = parseInt(target.dataset.size || '0', 10) || this.motifPhysicalSize(target.dataset.category || '');
+
+            if (targetUsedLength + targetSize > this.doubleBarLength()) {
+                this.restoreDraggedItem(target);
+                this.warning('Espace insuffisant sur cette barre.');
+                return;
+            }
+
+            target.dataset.bar = String(targetBar);
+            this.snapDoubleBarItemToBar(target, targetBar);
+        }
+
+        if (zone) {
+            this.arrangeDoubleBarsByDropOrder(zone);
+        }
+
+        this.clearDragStart(target);
+    },
+
+    arrangeDoubleBarsByDropOrder(zone) {
+        const motifs = Array.from(zone.querySelectorAll('.motif-draggable'));
+        const barOne = this.itemsSortedByX(motifs.filter((item) => Number(item.dataset.bar || 1) === 1));
+        const barTwo = this.itemsSortedByX(motifs.filter((item) => Number(item.dataset.bar || 1) === 2));
+        const ordered = barOne.concat(barTwo);
+
+        ordered.forEach((item) => zone.appendChild(item));
+        this.arrangeOnDoubleBars(ordered, zone);
     },
 
     dragOnCircle(event, target) {
@@ -649,13 +925,76 @@
         const mouseX = event.client.x - rect.left;
         const mouseY = event.client.y - rect.top;
         const angle = Math.atan2(mouseY - guide.centerY, mouseX - guide.centerX);
-        const x = guide.centerX + guide.radius * Math.cos(angle) - target.offsetWidth / 2;
-        const y = guide.centerY + guide.radius * Math.sin(angle) - target.offsetHeight / 2;
+        const position = this.resolveCircleCollision(target, guide, angle);
 
-        target.style.left = x + 'px';
-        target.style.top = y + 'px';
+        if (!position) {
+            return;
+        }
+
+        target.style.left = position.x + 'px';
+        target.style.top = position.y + 'px';
         target.style.transform = 'none';
-        target.setAttribute('data-angle', angle);
+        target.setAttribute('data-angle', position.angle);
+    },
+
+    circlePositionForAngle(target, guide, angle) {
+        return {
+            angle,
+            x: guide.centerX + guide.radius * Math.cos(angle) - target.offsetWidth / 2,
+            y: guide.centerY + guide.radius * Math.sin(angle) - target.offsetHeight / 2
+        };
+    },
+
+    resolveCircleCollision(target, guide, desiredAngle) {
+        const desired = this.circlePositionForAngle(target, guide, desiredAngle);
+
+        if (!this.circlePositionCollides(target, desired.x, desired.y)) {
+            return desired;
+        }
+
+        const step = 0.04;
+        const maxSteps = Math.ceil(Math.PI / step);
+
+        for (let i = 1; i <= maxSteps; i += 1) {
+            const before = this.circlePositionForAngle(target, guide, desiredAngle - (step * i));
+            const after = this.circlePositionForAngle(target, guide, desiredAngle + (step * i));
+
+            if (!this.circlePositionCollides(target, after.x, after.y)) {
+                return after;
+            }
+
+            if (!this.circlePositionCollides(target, before.x, before.y)) {
+                return before;
+            }
+        }
+
+        return null;
+    },
+
+    circlePositionCollides(target, x, y) {
+        const gap = 2;
+        const targetWidth = target.offsetWidth || 60;
+        const targetHeight = target.offsetHeight || targetWidth;
+        const targetRect = {
+            left: x,
+            right: x + targetWidth,
+            top: y,
+            bottom: y + targetHeight
+        };
+
+        return Array.from(document.querySelectorAll('#drop-zone-motifs .motif-draggable')).some((item) => {
+            if (item === target) return false;
+
+            const itemLeft = parseFloat(item.style.left) || 0;
+            const itemTop = parseFloat(item.style.top) || 0;
+            const itemWidth = item.offsetWidth || targetWidth;
+            const itemHeight = item.offsetHeight || itemWidth;
+
+            return targetRect.left < itemLeft + itemWidth + gap
+                && targetRect.right + gap > itemLeft
+                && targetRect.top < itemTop + itemHeight + gap
+                && targetRect.bottom + gap > itemTop;
+        });
     },
 
     renderText() {

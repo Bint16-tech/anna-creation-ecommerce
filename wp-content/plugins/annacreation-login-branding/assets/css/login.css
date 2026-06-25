@@ -1,0 +1,222 @@
+:root {
+	--anna-login-soft: #d8c7b8;
+	--anna-login-ivory: #fffaf5;
+	--anna-login-olive: #817041;
+	--anna-login-olive-hover: #95814b;
+	--anna-login-brown: #3e241a;
+	--anna-login-border: #cbb5a3;
+}
+
+body.login {
+	position: relative;
+	display: grid;
+	min-height: 100vh;
+	place-items: center;
+	overflow-x: hidden;
+	background:
+		radial-gradient(circle at 18% 22%, rgba(255, 250, 245, 0.62) 0 2px, transparent 3px),
+		linear-gradient(145deg, #e2d5c9 0%, var(--anna-login-soft) 58%, #cdb9aa 100%);
+	color: var(--anna-login-brown);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body.login::before,
+body.login::after {
+	position: fixed;
+	z-index: 0;
+	border: 1px solid rgba(129, 112, 65, 0.3);
+	border-radius: 50%;
+	content: "";
+	pointer-events: none;
+}
+
+body.login::before {
+	top: -130px;
+	left: -110px;
+	width: 330px;
+	height: 330px;
+}
+
+body.login::after {
+	right: -150px;
+	bottom: -180px;
+	width: 430px;
+	height: 430px;
+}
+
+.login #login {
+	position: relative;
+	z-index: 1;
+	width: min(420px, calc(100% - 32px));
+	padding: 50px 44px 36px;
+	border: 1px solid rgba(255, 255, 255, 0.45);
+	border-radius: 26px;
+	background: var(--anna-login-ivory);
+	box-shadow: 0 25px 70px rgba(62, 36, 26, 0.16);
+}
+
+.login h1 {
+	margin: 0 0 32px;
+}
+
+.login h1 a {
+	width: 100%;
+	height: 92px;
+	margin: 0;
+	background-image: url("../images/logo-annacreation.svg");
+	background-position: center;
+	background-size: contain;
+}
+
+.login form {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.login label,
+.login .forgetmenot label {
+	color: var(--anna-login-brown);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.login form .input,
+.login input[type="text"],
+.login input[type="password"],
+.login input[type="email"] {
+	min-height: 50px;
+	margin-top: 8px;
+	padding: 8px 14px;
+	border: 1px solid var(--anna-login-border);
+	border-radius: 12px;
+	background: #fffdf9;
+	color: var(--anna-login-brown);
+	box-shadow: none;
+	font-size: 16px;
+}
+
+.login form .input:focus,
+.login input[type="text"]:focus,
+.login input[type="password"]:focus,
+.login input[type="email"]:focus {
+	border-color: var(--anna-login-olive);
+	box-shadow: 0 0 0 3px rgba(129, 112, 65, 0.14);
+	outline: 0;
+}
+
+.login .button.wp-hide-pw {
+	color: var(--anna-login-olive);
+}
+
+.login .button.wp-hide-pw:hover,
+.login .button.wp-hide-pw:focus {
+	color: var(--anna-login-olive-hover);
+}
+
+.login .forgetmenot {
+	margin-top: 8px;
+}
+
+.login .button-primary {
+	min-height: 46px;
+	padding: 0 23px;
+	border: 1px solid var(--anna-login-olive);
+	border-radius: 999px;
+	background: var(--anna-login-olive);
+	color: #fff;
+	font-weight: 700;
+	text-shadow: none;
+	box-shadow: none;
+	transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.login .button-primary:hover,
+.login .button-primary:focus {
+	border-color: var(--anna-login-olive-hover);
+	background: var(--anna-login-olive-hover);
+	color: #fff;
+	transform: translateY(-1px);
+}
+
+.login #nav,
+.login #backtoblog {
+	margin: 22px 0 0;
+	padding: 0;
+	text-align: center;
+}
+
+.login #backtoblog {
+	margin-top: 12px;
+}
+
+.login #nav a,
+.login #backtoblog a,
+.login .privacy-policy-page-link a {
+	color: var(--anna-login-brown);
+	text-decoration: none;
+}
+
+.login #nav a:hover,
+.login #backtoblog a:hover,
+.login .privacy-policy-page-link a:hover {
+	color: var(--anna-login-olive);
+}
+
+.login .message,
+.login .notice,
+.login #login_error {
+	margin: 0 0 22px;
+	padding: 14px 16px;
+	border: 0;
+	border-left: 4px solid var(--anna-login-olive);
+	border-radius: 10px;
+	background: #f5eee7;
+	color: var(--anna-login-brown);
+	box-shadow: none;
+}
+
+.login .privacy-policy-page-link {
+	position: relative;
+	z-index: 1;
+	margin: 18px auto 0;
+}
+
+.login .language-switcher {
+	position: relative;
+	z-index: 1;
+	margin-top: 20px;
+}
+
+.login .language-switcher select {
+	border-color: var(--anna-login-border);
+	border-radius: 10px;
+	color: var(--anna-login-brown);
+}
+
+@media (max-width: 480px) {
+	body.login {
+		display: block;
+		padding: 28px 0;
+	}
+
+	.login #login {
+		width: calc(100% - 28px);
+		padding: 40px 24px 30px;
+	}
+
+	.login h1 a {
+		height: 80px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.login *,
+	.login *::before,
+	.login *::after {
+		transition-duration: 0.01ms !important;
+	}
+}
+

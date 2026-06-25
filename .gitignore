@@ -1,0 +1,47 @@
+
+# Configuration locale
+wp-config.php
+
+# Logs
+*.log
+
+# Cache
+wp-content/cache/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+
+# Sauvegardes
+wp-content/backup-db/
+wp-content/backups/
+
+# Ancien multisite
+wp-content/blogs.dir/
+
+# Mises à jour temporaires
+wp-content/upgrade/
+
+# Uploads (images, vidéos...)
+wp-content/uploads/
+
+# Plugin par défaut
+wp-content/plugins/hello.php
+
+# Fichiers générés
+sitemap.xml
+sitemap.xml.gz
+
+# Système
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Dépendances Node (si tu en utilises)
+node_modules/
+
+# Variables d'environnement
+.env
+.env.*
+!.env.example
