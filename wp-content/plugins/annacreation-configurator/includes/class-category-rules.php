@@ -38,6 +38,7 @@ class AnnaCreation_Category_Rules {
                     'label' => $slug,
                     'active' => true,
                     'clip_categories' => [],
+                    'base_image_id' => 0,
                     'base_image_url' => '',
                 ],
                 self::sanitize_product($slug, $product)
@@ -162,36 +163,42 @@ class AnnaCreation_Category_Rules {
                 'label' => __('Attache tetine', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['ronde', 'bois', 'fleur', 'foot', 'animee', 'dessins-fleuris', 'autre-clip'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'attache-doudou' => [
                 'label' => __('Attache doudou', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['ronde', 'bois', 'fleur', 'foot', 'animee', 'dessins-fleuris', 'autre-clip'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'anneau-dentition' => [
                 'label' => __('Anneau dentition', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['classique', 'anneau-animee'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'porte-cle' => [
                 'label' => __('Porte-cle', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'double-port-cle' => [
                 'label' => __('Double porte-cle', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'double-porte-cle' => [
                 'label' => __('Double porte-cle', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
+                'base_image_id' => 0,
                 'base_image_url' => '',
             ],
         ];
@@ -233,6 +240,7 @@ class AnnaCreation_Category_Rules {
             'label' => sanitize_text_field($product['label'] ?? $slug),
             'active' => !empty($product['active']),
             'clip_categories' => array_values(array_filter(array_map('sanitize_key', (array) ($product['clip_categories'] ?? [])))),
+            'base_image_id' => absint($product['base_image_id'] ?? 0),
             'base_image_url' => esc_url_raw($product['base_image_url'] ?? ''),
         ];
     }

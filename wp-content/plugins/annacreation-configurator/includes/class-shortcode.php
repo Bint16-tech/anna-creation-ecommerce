@@ -67,7 +67,9 @@ class AnnaCreation_Shortcode {
                             <div class="panel">
                                 <?php foreach ($items as $img): ?>
                                     <?php $name = $this->image_display_name('motif', $cat, $img, $media_labels); ?>
-                                    <img src="<?php echo esc_url($img); ?>"
+                                    <?php $img_url = $this->media_item_url($img); ?>
+                                    <?php if (!$img_url) continue; ?>
+                                    <img src="<?php echo esc_url($img_url); ?>"
                                          class="option-img"
                                          alt="<?php echo esc_attr($name); ?>"
                                          loading="lazy"
@@ -176,7 +178,9 @@ class AnnaCreation_Shortcode {
                                             <div class="clip-grid">
                                                 <?php foreach ($items as $img): ?>
                                                     <?php $name = $this->image_display_name('clip', $cat, $img, $media_labels); ?>
-                                                    <img src="<?php echo esc_url($img); ?>"
+                                                    <?php $img_url = $this->media_item_url($img); ?>
+                                                    <?php if (!$img_url) continue; ?>
+                                                    <img src="<?php echo esc_url($img_url); ?>"
                                                          class="img-opt-clip"
                                                          alt="<?php echo esc_attr($name); ?>"
                                                          data-category="<?php echo esc_attr($cat); ?>"
@@ -211,9 +215,7 @@ class AnnaCreation_Shortcode {
 
         foreach ($filtered as $category => $items) {
             $items = is_array($items) ? $items : [];
-            $filtered[$category] = array_values(array_filter(array_unique(array_map(static function ($url) {
-                return esc_url_raw(trim((string) $url));
-            }, $items))));
+            $filtered[$category] = array_values(array_filter(array_unique(array_map([$this, 'sanitize_media_item'], $items))));
 
             if (empty($filtered[$category])) {
                 unset($filtered[$category]);
@@ -234,10 +236,39 @@ class AnnaCreation_Shortcode {
     private function image_display_name($type, $category, $url, $labels) {
         $type = sanitize_key($type);
         $category = sanitize_key($category);
-        $key = md5(esc_url_raw(trim((string) $url)));
-        $label = sanitize_text_field($labels[$type][$category][$key] ?? '');
+        $key = $this->media_label_key($url);
+        $fallback_key = $this->media_label_key($this->media_item_url($url));
+        $label = sanitize_text_field($labels[$type][$category][$key] ?? $labels[$type][$category][$fallback_key] ?? '');
 
         return $label ?: $this->clean_category_label($category);
+    }
+
+    private function sanitize_media_item($item) {
+        if (is_numeric($item)) {
+            $attachment_id = absint($item);
+
+            return $attachment_id > 0 ? $attachment_id : '';
+        }
+
+        return esc_url_raw(trim((string) $item));
+    }
+
+    private function media_item_url($item) {
+        if (is_numeric($item)) {
+            $url = wp_get_attachment_url(absint($item));
+
+            return $url ? esc_url_raw($url) : '';
+        }
+
+        return esc_url_raw(trim((string) $item));
+    }
+
+    private function media_label_key($item) {
+        if (is_numeric($item)) {
+            return md5('attachment:' . absint($item));
+        }
+
+        return md5(esc_url_raw(trim((string) $item)));
     }
 
     private function media_labels_data() {
@@ -305,6 +336,16 @@ class AnnaCreation_Shortcode {
     private function base_image_url($assets_url, $product_slug) {
         $products = AnnaCreation_Category_Rules::all_products();
         $normalized_product = AnnaCreation_Category_Rules::normalized_product($product_slug);
+        $custom_base_image_id = absint($products[$normalized_product]['base_image_id'] ?? 0);
+
+        if ($custom_base_image_id) {
+            $custom_base_image_url = wp_get_attachment_url($custom_base_image_id);
+
+            if ($custom_base_image_url) {
+                return esc_url_raw($custom_base_image_url);
+            }
+        }
+
         $custom_base_image = esc_url_raw($products[$normalized_product]['base_image_url'] ?? '');
 
         if ($custom_base_image) {

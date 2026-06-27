@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AnnaCreation - Sections de l'accueil
  * Description: Remplace uniquement les sections génériques situées sous la bannière de la page d'accueil par une section WooCommerce dynamique.
- * Version: 1.1.0
+ * Version: 1.1.2
  * Author: AnnaCreation
  */
 
@@ -21,7 +21,7 @@ function annacreation_home_sections_enqueue_assets() {
 		'annacreation-home-sections',
 		plugin_dir_url( __FILE__ ) . 'assets/css/home-sections.css',
 		array(),
-		'1.1.0'
+		'1.1.2'
 	);
 }
 add_action( 'wp_enqueue_scripts', 'annacreation_home_sections_enqueue_assets', 30 );

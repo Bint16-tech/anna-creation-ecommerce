@@ -481,9 +481,10 @@ class AnnaCreation_Admin {
                                     <?php esc_html_e('Clips :', 'annacreation-configurator'); ?>
                                     <?php echo esc_html(implode(', ', (array) ($product['clip_categories'] ?? [])) ?: '-'); ?>
                                 </p>
-                                <?php if (!empty($product['base_image_url'])): ?>
+                                <?php $base_image_preview_url = $this->product_base_image_url($product); ?>
+                                <?php if ($base_image_preview_url): ?>
                                     <figure class="anna-product-base-preview">
-                                        <img src="<?php echo esc_url($product['base_image_url']); ?>" alt="">
+                                        <img src="<?php echo esc_url($base_image_preview_url); ?>" alt="">
                                         <figcaption><?php esc_html_e('Image de base personnalisee', 'annacreation-configurator'); ?></figcaption>
                                     </figure>
                                 <?php endif; ?>
@@ -702,11 +703,13 @@ class AnnaCreation_Admin {
                                         </button>
                                     </form>
                                     <div class="anna-preview-grid">
-                                        <?php foreach ($items as $url): ?>
-                                            <?php $display_name = $this->media_display_name($media_labels, $type, $slug, $url); ?>
+                                        <?php foreach ($items as $item): ?>
+                                            <?php $url = $this->media_item_url($item); ?>
+                                            <?php if (!$url) continue; ?>
+                                            <?php $display_name = $this->media_display_name($media_labels, $type, $slug, $item); ?>
                                             <figure class="anna-media-item">
                                                 <label>
-                                                    <input type="checkbox" name="urls[]" value="<?php echo esc_attr($url); ?>" form="<?php echo esc_attr('anna-bulk-' . $type . '-' . $slug); ?>">
+                                                    <input type="checkbox" name="urls[]" value="<?php echo esc_attr($item); ?>" form="<?php echo esc_attr('anna-bulk-' . $type . '-' . $slug); ?>">
                                                     <img src="<?php echo esc_url($url); ?>" alt="" loading="lazy" decoding="async">
                                                 </label>
                                                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="anna-media-name-form">
@@ -715,7 +718,7 @@ class AnnaCreation_Admin {
                                                     <input type="hidden" name="media_action" value="save_label">
                                                     <input type="hidden" name="type" value="<?php echo esc_attr($type); ?>">
                                                     <input type="hidden" name="category" value="<?php echo esc_attr($slug); ?>">
-                                                    <input type="hidden" name="url" value="<?php echo esc_attr($url); ?>">
+                                                    <input type="hidden" name="url" value="<?php echo esc_attr($item); ?>">
                                                     <label>
                                                         <?php esc_html_e('Nom affiche', 'annacreation-configurator'); ?>
                                                         <input type="text" name="display_name" value="<?php echo esc_attr($display_name); ?>" placeholder="<?php echo esc_attr($this->clean_category_label($slug)); ?>">
@@ -730,7 +733,7 @@ class AnnaCreation_Admin {
                                                     <input type="hidden" name="media_action" value="delete">
                                                     <input type="hidden" name="type" value="<?php echo esc_attr($type); ?>">
                                                     <input type="hidden" name="category" value="<?php echo esc_attr($slug); ?>">
-                                                    <input type="hidden" name="url" value="<?php echo esc_attr($url); ?>">
+                                                    <input type="hidden" name="url" value="<?php echo esc_attr($item); ?>">
                                                     <button type="submit" class="button-link-delete anna-delete-one">
                                                         <?php esc_html_e('Supprimer', 'annacreation-configurator'); ?>
                                                     </button>
@@ -891,17 +894,20 @@ class AnnaCreation_Admin {
         }
 
         $products = AnnaCreation_Category_Rules::all_products();
+        $base_image_id = absint($products[$slug]['base_image_id'] ?? 0);
         $base_image_url = esc_url_raw($products[$slug]['base_image_url'] ?? '');
-        $uploaded_base_image = $this->upload_product_base_image();
+        $uploaded_base_image_id = $this->upload_product_base_image();
 
-        if ($uploaded_base_image) {
-            $base_image_url = $uploaded_base_image;
+        if ($uploaded_base_image_id) {
+            $base_image_id = $uploaded_base_image_id;
+            $base_image_url = '';
         }
 
         $products[$slug] = [
             'label' => sanitize_text_field(wp_unslash($_POST['label'] ?? $slug)),
             'active' => !empty($_POST['active']),
             'clip_categories' => array_values(array_filter(array_map('sanitize_key', (array) ($_POST['clip_categories'] ?? [])))),
+            'base_image_id' => $base_image_id,
             'base_image_url' => $base_image_url,
         ];
 
@@ -914,6 +920,8 @@ class AnnaCreation_Admin {
         }
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
 
         $file = [
             'name' => sanitize_file_name((string) ($_FILES['base_image']['name'] ?? '')),
@@ -923,19 +931,20 @@ class AnnaCreation_Admin {
             'size' => (int) ($_FILES['base_image']['size'] ?? 0),
         ];
 
-        $uploaded = wp_handle_upload($file, ['test_form' => false]);
+        $attachment_id = media_handle_sideload($file, 0);
 
-        if (!empty($uploaded['error']) || empty($uploaded['url']) || empty($uploaded['file'])) {
-            return '';
+        if (is_wp_error($attachment_id)) {
+            return 0;
         }
 
-        $filetype = wp_check_filetype($uploaded['file']);
+        $mime_type = get_post_mime_type($attachment_id);
 
-        if (empty($filetype['type']) || strpos($filetype['type'], 'image/') !== 0) {
-            return '';
+        if (!$mime_type || strpos($mime_type, 'image/') !== 0) {
+            wp_delete_attachment($attachment_id, true);
+            return 0;
         }
 
-        return esc_url_raw($uploaded['url']);
+        return absint($attachment_id);
     }
 
     private function toggle_product() {
@@ -999,40 +1008,43 @@ class AnnaCreation_Admin {
         }
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
 
         $files = $this->normalize_uploaded_files($_FILES['images']);
-        $urls = [];
+        $items = [];
 
         foreach ($files as $file) {
             if (empty($file['name'])) {
                 continue;
             }
 
-            $uploaded = wp_handle_upload($file, ['test_form' => false]);
+            $attachment_id = media_handle_sideload($file, 0);
 
-            if (!empty($uploaded['error']) || empty($uploaded['url'])) {
+            if (is_wp_error($attachment_id)) {
                 continue;
             }
 
-            $filetype = wp_check_filetype($uploaded['file']);
+            $mime_type = get_post_mime_type($attachment_id);
 
-            if (empty($filetype['type']) || strpos($filetype['type'], 'image/') !== 0) {
+            if (!$mime_type || strpos($mime_type, 'image/') !== 0) {
+                wp_delete_attachment($attachment_id, true);
                 continue;
             }
 
-            $urls[] = esc_url_raw($uploaded['url']);
+            $items[] = absint($attachment_id);
         }
 
-        $urls = $this->sanitize_media_items($urls);
+        $items = $this->sanitize_media_items($items);
 
-        if (!$urls) {
+        if (!$items) {
             return 'empty';
         }
 
         $data = $this->media_data();
         $data = $this->ensure_media_path($data, $type, $category);
         $existing = $this->sanitize_media_items($data[$type][$category]);
-        $merged = $this->sanitize_media_items(array_merge($existing, $urls));
+        $merged = $this->sanitize_media_items(array_merge($existing, $items));
         $added = count(array_diff($merged, $existing));
         $data[$type][$category] = $merged;
 
@@ -1042,9 +1054,9 @@ class AnnaCreation_Admin {
     }
 
     private function delete_media($type, $category) {
-        $url = esc_url_raw(trim((string) wp_unslash($_POST['url'] ?? '')));
+        $item = $this->sanitize_media_item(wp_unslash($_POST['url'] ?? ''));
 
-        if (!$url) {
+        if (!$item) {
             return 'empty';
         }
 
@@ -1053,55 +1065,52 @@ class AnnaCreation_Admin {
         $current = $this->sanitize_media_items($data[$type][$category]);
         $data[$type][$category] = array_values(array_filter(
             $current,
-            static function ($item) use ($url) {
-                return $item !== $url;
+            static function ($current_item) use ($item) {
+                return (string) $current_item !== (string) $item;
             }
         ));
 
         update_option(self::OPTION_MEDIA, $data, false);
-        $this->delete_media_label($type, $category, $url);
+        $this->delete_media_label($type, $category, $item);
 
         return count($current) === count($data[$type][$category]) ? 'empty' : 'deleted';
     }
 
     private function delete_media_bulk($type, $category) {
-        $urls = array_map(static function ($url) {
-            return esc_url_raw(trim((string) wp_unslash($url)));
-        }, (array) ($_POST['urls'] ?? []));
-        $urls = array_values(array_filter(array_unique($urls)));
+        $items = $this->sanitize_media_items(array_map('wp_unslash', (array) ($_POST['urls'] ?? [])));
 
-        if (!$urls) {
+        if (!$items) {
             return 'empty';
         }
 
         $data = $this->media_data();
         $data = $this->ensure_media_path($data, $type, $category);
         $current = $this->sanitize_media_items($data[$type][$category]);
-        $remove = array_flip($urls);
+        $remove = array_flip(array_map('strval', $items));
 
         $data[$type][$category] = array_values(array_filter(
             $current,
             static function ($item) use ($remove) {
-                return !isset($remove[$item]);
+                return !isset($remove[(string) $item]);
             }
         ));
 
         update_option(self::OPTION_MEDIA, $data, false);
-        $this->delete_media_labels($type, $category, $urls);
+        $this->delete_media_labels($type, $category, $items);
 
         return count($current) === count($data[$type][$category]) ? 'empty' : 'deleted';
     }
 
     private function save_media_label($type, $category) {
-        $url = esc_url_raw(trim((string) wp_unslash($_POST['url'] ?? '')));
+        $item = $this->sanitize_media_item(wp_unslash($_POST['url'] ?? ''));
         $display_name = sanitize_text_field(wp_unslash($_POST['display_name'] ?? ''));
 
-        if (!$url) {
+        if (!$item) {
             return 'empty';
         }
 
         $labels = $this->media_labels_data();
-        $key = $this->media_label_key($url);
+        $key = $this->media_label_key($item);
 
         if (!isset($labels[$type]) || !is_array($labels[$type])) {
             $labels[$type] = [];
@@ -1143,11 +1152,29 @@ class AnnaCreation_Admin {
             return [];
         }
 
-        $items = array_map(static function ($url) {
-            return esc_url_raw(trim((string) $url));
-        }, $items);
+        $items = array_map([$this, 'sanitize_media_item'], $items);
 
         return array_values(array_filter(array_unique($items)));
+    }
+
+    private function sanitize_media_item($item) {
+        if (is_numeric($item)) {
+            $attachment_id = absint($item);
+
+            return $attachment_id > 0 ? $attachment_id : '';
+        }
+
+        return esc_url_raw(trim((string) $item));
+    }
+
+    private function media_item_url($item) {
+        if (is_numeric($item)) {
+            $url = wp_get_attachment_url(absint($item));
+
+            return $url ? esc_url_raw($url) : '';
+        }
+
+        return esc_url_raw(trim((string) $item));
     }
 
     private function media_labels_data() {
@@ -1158,8 +1185,9 @@ class AnnaCreation_Admin {
 
     private function media_display_name($labels, $type, $category, $url) {
         $key = $this->media_label_key($url);
+        $fallback_key = $this->media_label_key($this->media_item_url($url));
 
-        return sanitize_text_field($labels[$type][$category][$key] ?? '');
+        return sanitize_text_field($labels[$type][$category][$key] ?? $labels[$type][$category][$fallback_key] ?? '');
     }
 
     private function delete_media_label($type, $category, $url) {
@@ -1177,7 +1205,25 @@ class AnnaCreation_Admin {
     }
 
     private function media_label_key($url) {
+        if (is_numeric($url)) {
+            return md5('attachment:' . absint($url));
+        }
+
         return md5(esc_url_raw(trim((string) $url)));
+    }
+
+    private function product_base_image_url($product) {
+        $attachment_id = absint($product['base_image_id'] ?? 0);
+
+        if ($attachment_id) {
+            $url = wp_get_attachment_url($attachment_id);
+
+            if ($url) {
+                return esc_url_raw($url);
+            }
+        }
+
+        return esc_url_raw($product['base_image_url'] ?? '');
     }
 
     private function clean_category_label($category) {
