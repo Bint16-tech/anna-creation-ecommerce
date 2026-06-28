@@ -160,7 +160,7 @@ class AnnaCreation_Category_Rules {
     private static function default_products() {
         return [
             'attache-tetine' => [
-                'label' => __('Attache tetine', 'annacreation-configurator'),
+                'label' => __('Attache-tétine', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['ronde', 'bois', 'fleur', 'foot', 'animee', 'dessins-fleuris', 'autre-clip'],
                 'base_image_id' => 0,
@@ -181,21 +181,21 @@ class AnnaCreation_Category_Rules {
                 'base_image_url' => '',
             ],
             'porte-cle' => [
-                'label' => __('Porte-cle', 'annacreation-configurator'),
+                'label' => __('Porte-clé', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
                 'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'double-port-cle' => [
-                'label' => __('Double porte-cle', 'annacreation-configurator'),
+                'label' => __('Double porte-clé', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
                 'base_image_id' => 0,
                 'base_image_url' => '',
             ],
             'double-porte-cle' => [
-                'label' => __('Double porte-cle', 'annacreation-configurator'),
+                'label' => __('Double porte-clé', 'annacreation-configurator'),
                 'active' => true,
                 'clip_categories' => ['anneau'],
                 'base_image_id' => 0,
@@ -223,6 +223,10 @@ class AnnaCreation_Category_Rules {
 
     private static function default_fantasy_pricing_type($slug) {
         $slug = sanitize_key($slug);
+
+        if ($slug === 'animaux') {
+            return 'classique';
+        }
 
         if (str_contains($slug, 'foot')) {
             return 'foot';

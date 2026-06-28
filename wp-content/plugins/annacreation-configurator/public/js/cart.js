@@ -48,10 +48,18 @@
             }
 
             if (required > 0 && config.clips.length < required) {
+                if (this.normalize(config.product) === 'double-porte-cle') {
+                    return 'Veuillez choisir 1 anneau.';
+                }
+
                 return required === 2 ? 'Veuillez choisir 2 clips.' : 'Veuillez choisir 1 clip.';
             }
 
             if (max > 0 && config.clips.length > max) {
+                if (this.normalize(config.product) === 'double-porte-cle') {
+                    return 'Un seul anneau maximum pour ce produit.';
+                }
+
                 return max === 1 ? 'Un seul clip maximum pour ce produit.' : `Maximum ${max} clips pour ce produit.`;
             }
 

@@ -32,6 +32,7 @@ class AnnaCreation_Shortcode {
         $media_labels = $this->media_labels_data();
         $clips = $this->media_for_product($product_slug, 'clip', $data);
         $motifs = $this->media_for_product($product_slug, 'motif', $data);
+        $is_double_keychain = in_array(AnnaCreation_Category_Rules::normalized_product($product_slug), ['double-port-cle', 'double-porte-cle'], true);
 
         if (!isset(AnnaCreation_Category_Rules::products()[AnnaCreation_Category_Rules::normalized_product($product_slug)])) {
             return '<p>' . esc_html__('Produit introuvable', 'annacreation-configurator') . '</p>';
@@ -50,7 +51,7 @@ class AnnaCreation_Shortcode {
                 <h3><?php esc_html_e('Personnalisation', 'annacreation-configurator'); ?></h3>
 
                 <button type="button" class="btn-open-clip" onclick="Anna.openModal()">
-                    <?php esc_html_e('Choisir mon Clip', 'annacreation-configurator'); ?>
+                    <?php echo esc_html($is_double_keychain ? __('Choisir mon anneau', 'annacreation-configurator') : __('Choisir mon Clip', 'annacreation-configurator')); ?>
                 </button>
 
                 <div class="motifs-section">
@@ -115,7 +116,7 @@ class AnnaCreation_Shortcode {
             <div id="anna-modal" class="modal">
                 <div class="modal-content">
                     <span class="close-modal" onclick="Anna.closeModal()">&times;</span>
-                    <h2><?php esc_html_e('Choisissez votre Clip', 'annacreation-configurator'); ?></h2>
+                    <h2><?php echo esc_html($is_double_keychain ? __('Choisissez votre anneau', 'annacreation-configurator') : __('Choisissez votre Clip', 'annacreation-configurator')); ?></h2>
 
                     <div class="clips-selection">
                         <?php if (!empty($clips)): ?>
@@ -133,7 +134,7 @@ class AnnaCreation_Shortcode {
                             </div>
 
                             <div class="clip-browser">
-                                <nav class="clip-categories" aria-label="<?php echo esc_attr__('Categories de clips', 'annacreation-configurator'); ?>">
+                                <nav class="clip-categories" aria-label="<?php echo esc_attr($is_double_keychain ? __('Categories d\'anneaux', 'annacreation-configurator') : __('Categories de clips', 'annacreation-configurator')); ?>">
                                     <button type="button"
                                             class="clip-category-button is-active"
                                             data-category="all">
@@ -194,7 +195,7 @@ class AnnaCreation_Shortcode {
                                     <?php endforeach; ?>
 
                                     <p class="clip-empty-results" hidden>
-                                        <?php esc_html_e('Aucun clip trouve.', 'annacreation-configurator'); ?>
+                                        <?php echo esc_html($is_double_keychain ? __('Aucun anneau trouvé.', 'annacreation-configurator') : __('Aucun clip trouvé.', 'annacreation-configurator')); ?>
                                     </p>
                                 </div>
                             </div>
@@ -284,7 +285,7 @@ class AnnaCreation_Shortcode {
             'lettre-blanche-noir' => __('Lettre blanche noire', 'annacreation-configurator'),
             'lettre-blanche-noire' => __('Lettre blanche noire', 'annacreation-configurator'),
             'lettre-camel' => __('Lettre camel', 'annacreation-configurator'),
-            'animee' => __('Animee', 'annacreation-configurator'),
+            'animee' => __('Animée', 'annacreation-configurator'),
             'fleur' => __('Fleur', 'annacreation-configurator'),
             'animaux' => __('Animaux', 'annacreation-configurator'),
             'arc-en-ciel' => __('Arc-en-ciel', 'annacreation-configurator'),
@@ -316,15 +317,28 @@ class AnnaCreation_Shortcode {
             return '0€';
         }
 
-        if (str_contains($slug, 'anim')) {
-            return '1ere 0€, suivante +2€';
+        $categories = AnnaCreation_Category_Rules::categories(true);
+        $pricing_type = sanitize_key($categories['fantaisies'][$slug]['pricing_type'] ?? '');
+
+        if (!in_array($pricing_type, ['classique', 'foot', 'anime'], true)) {
+            if (str_contains($slug, 'foot')) {
+                $pricing_type = 'foot';
+            } elseif (str_contains($slug, 'anim')) {
+                $pricing_type = 'anime';
+            } else {
+                $pricing_type = 'classique';
+            }
         }
 
-        if (str_contains($slug, 'foot')) {
-            return '1ere 0€, suivante +1€';
+        if ($pricing_type === 'anime') {
+            return '+2€';
         }
 
-        return '1ere 0€, suivante +1€';
+        if ($pricing_type === 'foot') {
+            return '+1€';
+        }
+
+        return '1ère 0€, 2ème +1€';
     }
 
     private function normalize_label($value) {

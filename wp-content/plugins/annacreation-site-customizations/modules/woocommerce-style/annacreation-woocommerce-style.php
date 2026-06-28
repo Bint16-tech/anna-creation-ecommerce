@@ -89,21 +89,8 @@ function annacreation_get_personalization_url_from_categories( $term_ids ) {
 
 function annacreation_get_product_personalization_url( $product_id ) {
 	$url = get_post_meta( $product_id, '_annacreation_personalization_url', true );
-	$url = annacreation_normalize_personalization_url( $url );
 
-	if ( $url ) {
-		return $url;
-	}
-
-	$term_ids = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'ids' ) );
-
-	if ( is_wp_error( $term_ids ) ) {
-		return '';
-	}
-
-	return annacreation_normalize_personalization_url(
-		annacreation_get_personalization_url_from_categories( $term_ids )
-	);
+	return annacreation_normalize_personalization_url( $url );
 }
 
 function annacreation_wc_style_product_field() {

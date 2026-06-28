@@ -7,36 +7,51 @@ defined( 'ABSPATH' ) || exit;
 
 $uploads_url = content_url( '/uploads/2026/06/' );
 $shop_url    = function_exists( 'wc_get_page_id' ) ? get_permalink( wc_get_page_id( 'shop' ) ) : home_url( '/shop/' );
+$about_image = function_exists( 'annacreation_about_get_image_url' )
+	? 'annacreation_about_get_image_url'
+	: static function ( $key ) use ( $uploads_url ) {
+		$defaults = array(
+			'hero_main'           => $uploads_url . 'attacheTetine1-e1780390784806-621x1024.jpeg',
+			'hero_small'          => $uploads_url . 'anneau-e1780388692539-609x1024.jpeg',
+			'attache_tetine'      => $uploads_url . 'attacheTetine1-e1780390784806-621x1024.jpeg',
+			'attache_doudou'      => $uploads_url . 'attacheMaron-473x1024.jpeg',
+			'porte_cle'           => $uploads_url . 'portcle-473x1024.jpeg',
+			'double_porte_cle'    => $uploads_url . 'portClemaron-473x1024.jpeg',
+			'anneau_de_dentition' => $uploads_url . 'anneau-e1780388692539-609x1024.jpeg',
+		);
+
+		return $defaults[ $key ] ?? '';
+	};
 
 $products = array(
 	array(
 		'title'       => 'Attache-tétine personnalisée',
 		'description' => 'Un accessoire pratique et unique, composé avec le prénom, les couleurs et les fantaisies de votre choix.',
-		'image'       => $uploads_url . 'attacheTetine1-e1780390784806-621x1024.jpeg',
+		'image'       => $about_image( 'attache_tetine' ),
 		'url'         => home_url( '/attache-tetine/' ),
 	),
 	array(
 		'title'       => 'Attache-doudou personnalisée',
 		'description' => 'Gardez le doudou préféré de bébé toujours à portée de main avec une création douce et personnalisée.',
-		'image'       => $uploads_url . 'attacheMaron-473x1024.jpeg',
+		'image'       => $about_image( 'attache_doudou' ),
 		'url'         => home_url( '/attache-doudou/' ),
 	),
 	array(
 		'title'       => 'Porte-clé personnalisé',
 		'description' => 'Prénom, perles, motifs et couleurs s’assemblent pour créer un petit accessoire qui vous ressemble.',
-		'image'       => $uploads_url . 'portcle-473x1024.jpeg',
+		'image'       => $about_image( 'porte_cle' ),
 		'url'         => home_url( '/porte-cle/' ),
 	),
 	array(
 		'title'       => 'Double porte-clé personnalisé',
 		'description' => 'Deux créations assorties à partager, idéales pour célébrer un lien précieux en famille ou entre proches.',
-		'image'       => $uploads_url . 'portClemaron-473x1024.jpeg',
+		'image'       => $about_image( 'double_porte_cle' ),
 		'url'         => home_url( '/double-port-cle/' ),
 	),
 	array(
 		'title'       => 'Anneau de dentition personnalisé',
 		'description' => 'Un anneau pensé pour les petites mains, personnalisé avec un prénom et une harmonie de perles choisie.',
-		'image'       => $uploads_url . 'anneau-e1780388692539-609x1024.jpeg',
+		'image'       => $about_image( 'anneau_de_dentition' ),
 		'url'         => home_url( '/anneau-de-dentition/' ),
 	),
 );
@@ -56,8 +71,8 @@ get_header();
 
 			<div class="ac-about__hero-visual" aria-label="Créations personnalisées AnnaCreation">
 				<div class="ac-about__hero-orbit" aria-hidden="true"></div>
-				<img class="ac-about__hero-image ac-about__hero-image--main" src="<?php echo esc_url( $uploads_url . 'attacheTetine1-e1780390784806-621x1024.jpeg' ); ?>" alt="Attache-tétine rose personnalisée AnnaCreation">
-				<img class="ac-about__hero-image ac-about__hero-image--small" src="<?php echo esc_url( $uploads_url . 'anneau-e1780388692539-609x1024.jpeg' ); ?>" alt="Anneau de dentition personnalisé AnnaCreation">
+				<img class="ac-about__hero-image ac-about__hero-image--main" src="<?php echo esc_url( $about_image( 'hero_main' ) ); ?>" alt="Attache-tétine rose personnalisée AnnaCreation">
+				<img class="ac-about__hero-image ac-about__hero-image--small" src="<?php echo esc_url( $about_image( 'hero_small' ) ); ?>" alt="Anneau de dentition personnalisé AnnaCreation">
 				<span class="ac-about__hero-note">Fait avec soin<br><strong>pour chaque histoire</strong></span>
 			</div>
 		</div>

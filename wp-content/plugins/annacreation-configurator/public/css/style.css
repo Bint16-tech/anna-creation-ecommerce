@@ -430,8 +430,14 @@ body.anna-personnalisation-page .site-header {
     height: 100%;
     object-fit: contain;
     object-position: center;
-    transform: translateX(30%) scale(2.15);
+    transform: translateX(32%) scale(2.85);
     transform-origin: center;
+}
+
+.anna-layout[data-product="double-port-cle"] .clip-wrapper,
+.anna-layout[data-product="double-porte-cle"] .clip-wrapper {
+    aspect-ratio: auto;
+    height: 100%;
 }
 
 .anna-layout[data-product="anneau-dentition"] .clip-wrapper {

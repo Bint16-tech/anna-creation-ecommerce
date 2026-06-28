@@ -24,12 +24,12 @@ class AnnaCreation_Pricing {
 
     public static function product_labels() {
         return [
-            'attache-tetine' => 'Attache-tetine',
+            'attache-tetine' => 'Attache-tétine',
             'attache-doudou' => 'Attache-doudou',
             'anneau-dentition' => 'Anneau de dentition',
-            'porte-cle' => 'Porte-cle',
-            'double-port-cle' => 'Double porte-cle',
-            'double-porte-cle' => 'Double porte-cle',
+            'porte-cle' => 'Porte-clé',
+            'double-port-cle' => 'Double porte-clé',
+            'double-porte-cle' => 'Double porte-clé',
         ];
     }
 
@@ -47,7 +47,7 @@ class AnnaCreation_Pricing {
         $settings = self::settings();
         $products = [
             'attache-tetine' => [
-                'label' => 'Attache-tetine',
+                'label' => 'Attache-tétine',
                 'clip_count' => 1,
                 'max_clips' => 2,
                 'base' => $settings['products']['attache-tetine']['base'],
@@ -71,7 +71,7 @@ class AnnaCreation_Pricing {
                 'allowed_clip_categories' => ['classique', 'anneau-animee'],
             ],
             'porte-cle' => [
-                'label' => 'Porte-cle',
+                'label' => 'Porte-clé',
                 'clip_count' => 1,
                 'base' => $settings['products']['porte-cle']['base'],
                 'extra' => self::global_extra_for_rule($settings),
@@ -79,8 +79,8 @@ class AnnaCreation_Pricing {
                 'allowed_clip_categories' => ['anneau'],
             ],
             'double-porte-cle' => [
-                'label' => 'Double porte-cle',
-                'clip_count' => 2,
+                'label' => 'Double porte-clé',
+                'clip_count' => 1,
                 'base' => $settings['products']['double-porte-cle']['base'],
                 'extra' => self::global_extra_for_rule($settings),
                 'clip_extra' => ['any' => 0.0],
@@ -240,13 +240,19 @@ class AnnaCreation_Pricing {
             $max = (int) ($rules['max_clips'] ?? $required);
 
             if ($required > 0 && $clip_count < $required) {
-                $errors[] = sprintf(__('Veuillez choisir %d clip(s).', 'annacreation-configurator'), $required);
+                $errors[] = $config['product'] === 'double-porte-cle'
+                    ? __('Veuillez choisir 1 anneau.', 'annacreation-configurator')
+                    : sprintf(__('Veuillez choisir %d clip(s).', 'annacreation-configurator'), $required);
             }
 
             if ($max > 0 && $clip_count > $max) {
-                $errors[] = $max === 1
-                    ? __('Un seul clip maximum pour ce produit.', 'annacreation-configurator')
-                    : sprintf(__('Maximum %d clips pour ce produit.', 'annacreation-configurator'), $max);
+                if ($config['product'] === 'double-porte-cle') {
+                    $errors[] = __('Un seul anneau maximum pour ce produit.', 'annacreation-configurator');
+                } else {
+                    $errors[] = $max === 1
+                        ? __('Un seul clip maximum pour ce produit.', 'annacreation-configurator')
+                        : sprintf(__('Maximum %d clips pour ce produit.', 'annacreation-configurator'), $max);
+                }
             }
 
             if ($config['product'] === 'anneau-dentition') {
@@ -291,7 +297,9 @@ class AnnaCreation_Pricing {
             ];
         }
 
-        $type = self::motif_type($config['motifs'][0]['category'] ?? '');
+        $type = $config['product'] === 'double-porte-cle'
+            ? self::motif_type($config['motifs'][0]['category'] ?? '')
+            : self::base_motif_type($config['motifs']);
         $price = (float) ($rules['base'][$type] ?? $rules['base']['classique'] ?? 0.0);
         $breakdown[] = ['label' => 'Base ' . ($rules['label'] ?? $config['product']), 'amount' => $price];
 
@@ -303,14 +311,31 @@ class AnnaCreation_Pricing {
             $price += $amount;
         }
 
-        $included_motifs = $config['product'] === 'double-porte-cle' ? 2 : 1;
-
-        foreach (array_slice($config['motifs'], $included_motifs) as $motif) {
-            $amount = self::additional_motif_extra($motif['category'], $rules);
-            if ($amount > 0) {
-                $breakdown[] = ['label' => 'Fantaisie supplementaire ' . $motif['category'], 'amount' => $amount];
+        if ($config['product'] === 'double-porte-cle') {
+            foreach (array_slice($config['motifs'], 2) as $motif) {
+                $amount = self::additional_motif_extra($motif['category'], $rules);
+                if ($amount > 0) {
+                    $breakdown[] = ['label' => 'Fantaisie supplementaire ' . $motif['category'], 'amount' => $amount];
+                }
+                $price += $amount;
             }
-            $price += $amount;
+        } else {
+            $category_counts = [];
+
+            foreach ($config['motifs'] as $motif) {
+                $category = self::normalize($motif['category'] ?? '');
+                $category_counts[$category] = ($category_counts[$category] ?? 0) + 1;
+
+                if ($category_counts[$category] <= 1) {
+                    continue;
+                }
+
+                $amount = self::additional_motif_extra($motif['category'], $rules);
+                if ($amount > 0) {
+                    $breakdown[] = ['label' => 'Fantaisie supplementaire ' . $motif['category'], 'amount' => $amount];
+                }
+                $price += $amount;
+            }
         }
 
         $price = round($price, 2);
@@ -399,6 +424,24 @@ class AnnaCreation_Pricing {
         }
 
         return (float) ($extras['fantaisie'] ?? 1.0);
+    }
+
+    private static function base_motif_type($motifs) {
+        $types = [];
+
+        foreach ((array) $motifs as $motif) {
+            $types[] = self::motif_type($motif['category'] ?? '');
+        }
+
+        if (in_array('anime', $types, true)) {
+            return 'anime';
+        }
+
+        if (in_array('foot', $types, true)) {
+            return 'foot';
+        }
+
+        return $types[0] ?? 'classique';
     }
 
     private static function max_motifs($config) {

@@ -77,7 +77,7 @@
                 if (!this.clipRequired || this.hasRequiredClips()) {
                     this.closeModal();
                 } else {
-                    this.warning('Veuillez choisir le nombre de clips requis.');
+                    this.warning(this.requiredClipMessage());
                 }
             };
         }
@@ -199,6 +199,12 @@
         const max = typeof this.maxClipCount === 'function' ? this.maxClipCount() : required;
 
         return required === 0 || (this.state.clips.length >= required && this.state.clips.length <= max);
+    },
+
+    requiredClipMessage() {
+        return this.isDoubleKeychain()
+            ? 'Veuillez choisir 1 anneau.'
+            : 'Veuillez choisir le nombre de clips requis.';
     },
 
     normalizedSlug(value) {
@@ -379,8 +385,8 @@
             'attache-tetine': 1,
             'attache-doudou': 2,
             'porte-cle': 1,
-            'double-port-cle': 2,
-            'double-porte-cle': 2
+            'double-port-cle': 1,
+            'double-porte-cle': 1
         };
         const maxClips = placementLimits[this.product]
             ?? (typeof this.maxClipCount === 'function' ? this.maxClipCount() : 1);
@@ -439,8 +445,9 @@
 
             if (isDoubleKeychain) {
                 clip.style.left = '0';
-                clip.style.top = index === 0 ? '0%' : '53%';
+                clip.style.top = '0';
                 clip.style.width = '100%';
+                clip.style.height = '100%';
                 return;
             }
 
@@ -456,17 +463,19 @@
         const existing = zone.querySelector('.anna-optional-clip-add');
         if (existing) existing.remove();
 
-        const isDoubleKeychain = ['double-port-cle', 'double-porte-cle'].includes(this.product);
+        if (this.isDoubleKeychain && this.isDoubleKeychain()) {
+            return;
+        }
 
-        if (!['attache-doudou', 'double-port-cle', 'double-porte-cle'].includes(this.product) || zone.querySelectorAll('.clip-wrapper').length !== 1) {
+        if (this.product !== 'attache-doudou' || zone.querySelectorAll('.clip-wrapper').length !== 1) {
             return;
         }
 
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = isDoubleKeychain ? 'anna-optional-clip-add is-double-keychain' : 'anna-optional-clip-add';
+        button.className = 'anna-optional-clip-add';
         button.textContent = '+';
-        button.setAttribute('aria-label', isDoubleKeychain ? 'Ajouter le deuxieme clip' : 'Ajouter un clip optionnel à droite');
+        button.setAttribute('aria-label', 'Ajouter un clip optionnel à droite');
         button.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();

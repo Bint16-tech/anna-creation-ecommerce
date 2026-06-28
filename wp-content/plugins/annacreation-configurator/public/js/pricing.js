@@ -37,7 +37,7 @@
                 allowedClipCategories: ['anneau']
             },
             'double-porte-cle': {
-                clipCount: 2,
+                clipCount: 1,
                 base: { classique: 20, foot: 22, anime: 24 },
                 extra: { fantaisie: 1, anime: 2 },
                 clipExtra: { any: 0 },
@@ -149,6 +149,15 @@
         return rule.extra?.fantaisie || 0;
     }
 
+    function baseMotifType(motifs) {
+        const types = (Array.isArray(motifs) ? motifs : []).map((motif) => motifType(motif.category));
+
+        if (types.includes('anime')) return 'anime';
+        if (types.includes('foot')) return 'foot';
+
+        return types[0] || 'classique';
+    }
+
     function limitedLetterCategoryCount(motifs) {
         const categories = PRICING_CONFIG.limitedLetterCategories || [];
 
@@ -168,18 +177,31 @@
 
         if (!rule) return 0;
 
-        const baseType = motifType(safeConfig.motifs[0]?.category || '');
+        const baseType = canonicalProduct(safeConfig.product) === 'double-porte-cle'
+            ? motifType(safeConfig.motifs[0]?.category || '')
+            : baseMotifType(safeConfig.motifs);
         let price = rule.base[baseType] ?? rule.base.classique ?? 0;
 
         safeConfig.clips.forEach((clip) => {
             price += clipExtra(clip.category, safeConfig, rule);
         });
 
-        const includedMotifs = canonicalProduct(safeConfig.product) === 'double-porte-cle' ? 2 : 1;
+        if (canonicalProduct(safeConfig.product) === 'double-porte-cle') {
+            safeConfig.motifs.slice(2).forEach((motif) => {
+                price += additionalMotifExtra(motif.category, rule);
+            });
+        } else {
+            const categoryCounts = {};
 
-        safeConfig.motifs.slice(includedMotifs).forEach((motif) => {
-            price += additionalMotifExtra(motif.category, rule);
-        });
+            safeConfig.motifs.forEach((motif) => {
+                const category = normalize(motif.category);
+                categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+
+                if (categoryCounts[category] > 1) {
+                    price += additionalMotifExtra(motif.category, rule);
+                }
+            });
+        }
 
         return Math.round(price * 100) / 100;
     }
