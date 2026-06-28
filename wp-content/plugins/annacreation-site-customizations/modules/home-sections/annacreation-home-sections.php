@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AnnaCreation - Sections de l'accueil
  * Description: Remplace uniquement les sections génériques situées sous la bannière de la page d'accueil par une section WooCommerce dynamique.
- * Version: 1.1.2
+ * Version: 1.1.3
  * Author: AnnaCreation
  */
 
@@ -17,11 +17,22 @@ function annacreation_home_sections_enqueue_assets() {
 		return;
 	}
 
+	$style_path  = plugin_dir_path( __FILE__ ) . 'assets/css/home-sections.css';
+	$script_path = plugin_dir_path( __FILE__ ) . 'assets/js/home-sections.js';
+
 	wp_enqueue_style(
 		'annacreation-home-sections',
 		plugin_dir_url( __FILE__ ) . 'assets/css/home-sections.css',
 		array(),
-		'1.1.2'
+		file_exists( $style_path ) ? filemtime( $style_path ) : '1.1.3'
+	);
+
+	wp_enqueue_script(
+		'annacreation-home-sections',
+		plugin_dir_url( __FILE__ ) . 'assets/js/home-sections.js',
+		array(),
+		file_exists( $script_path ) ? filemtime( $script_path ) : '1.1.3',
+		true
 	);
 }
 add_action( 'wp_enqueue_scripts', 'annacreation_home_sections_enqueue_assets', 30 );
@@ -33,7 +44,7 @@ function annacreation_home_get_products() {
 
 	return wc_get_products(
 		array(
-		'limit'      => 4,
+		'limit'      => -1,
 		'status'     => 'publish',
 		'visibility' => 'visible',
 		'orderby'    => 'date',
@@ -89,7 +100,7 @@ function annacreation_home_sections_content( $content ) {
 
 	ob_start();
 	?>
-	<section class="ac-home-products" aria-labelledby="ac-home-products-title">
+	<section class="ac-home-products" aria-labelledby="ac-home-products-title" data-ac-home-carousel>
 		<div class="ac-home-products__shell">
 			<header class="ac-home-products__heading">
 				<p class="ac-home-products__eyebrow">L'univers AnnaCreation</p>
@@ -98,62 +109,74 @@ function annacreation_home_sections_content( $content ) {
 			</header>
 
 			<?php if ( ! empty( $products ) ) : ?>
-				<div class="ac-home-products__grid">
-					<?php foreach ( $products as $product ) : ?>
-						<?php
-						$product_id          = $product->get_id();
-						$personalization_url = function_exists( 'annacreation_get_product_personalization_url' )
-							? annacreation_get_product_personalization_url( $product_id )
-							: '';
-						?>
-						<article class="ac-home-product">
-							<a class="ac-home-product__image" href="<?php echo esc_url( get_permalink( $product_id ) ); ?>">
-								<?php echo $product->get_image( 'woocommerce_thumbnail', array( 'loading' => 'lazy' ) ); ?>
-							</a>
-							<div class="ac-home-product__content">
-								<h3>
-									<a href="<?php echo esc_url( get_permalink( $product_id ) ); ?>">
-										<?php echo esc_html( $product->get_name() ); ?>
+				<div class="ac-home-products__carousel">
+					<button class="ac-home-products__arrow ac-home-products__arrow--prev" type="button" aria-label="Produits précédents" data-ac-carousel-prev>
+						<span aria-hidden="true">‹</span>
+					</button>
+
+					<div class="ac-home-products__viewport" tabindex="0">
+						<div class="ac-home-products__grid ac-home-products__track">
+							<?php foreach ( $products as $product ) : ?>
+								<?php
+								$product_id          = $product->get_id();
+								$personalization_url = function_exists( 'annacreation_get_product_personalization_url' )
+									? annacreation_get_product_personalization_url( $product_id )
+									: '';
+								?>
+								<article class="ac-home-product">
+									<a class="ac-home-product__image" href="<?php echo esc_url( get_permalink( $product_id ) ); ?>">
+										<?php echo $product->get_image( 'woocommerce_thumbnail', array( 'loading' => 'lazy' ) ); ?>
 									</a>
-								</h3>
+									<div class="ac-home-product__content">
+										<h3>
+											<a href="<?php echo esc_url( get_permalink( $product_id ) ); ?>">
+												<?php echo esc_html( $product->get_name() ); ?>
+											</a>
+										</h3>
 
-								<?php if ( $product->get_short_description() ) : ?>
-									<p><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $product->get_short_description() ), 18 ) ); ?></p>
-								<?php endif; ?>
+										<?php if ( $product->get_short_description() ) : ?>
+											<p><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $product->get_short_description() ), 18 ) ); ?></p>
+										<?php endif; ?>
 
-								<?php if ( $product->get_price_html() ) : ?>
-									<div class="ac-home-product__price"><?php echo wp_kses_post( $product->get_price_html() ); ?></div>
-								<?php endif; ?>
+										<?php if ( $product->get_price_html() ) : ?>
+											<div class="ac-home-product__price"><?php echo wp_kses_post( $product->get_price_html() ); ?></div>
+										<?php endif; ?>
 
-								<div class="ac-home-product__actions">
-									<?php
-									echo apply_filters(
-										'woocommerce_loop_add_to_cart_link',
-										sprintf(
-											'<a href="%s" data-quantity="1" class="%s" %s>%s</a>',
-											esc_url( $product->add_to_cart_url() ),
-											esc_attr( implode( ' ', array_filter( array( 'button', 'product_type_' . $product->get_type(), $product->is_purchasable() && $product->is_in_stock() ? 'add_to_cart_button' : '', $product->supports( 'ajax_add_to_cart' ) ? 'ajax_add_to_cart' : '' ) ) ) ),
-											wc_implode_html_attributes(
-												array(
-													'data-product_id'  => $product_id,
-													'data-product_sku' => $product->get_sku(),
-													'aria-label'       => $product->add_to_cart_description(),
-													'rel'              => 'nofollow',
-												)
-											),
-											esc_html( $product->add_to_cart_text() )
-										),
-										$product
-									);
-									?>
+										<div class="ac-home-product__actions">
+											<?php
+											echo apply_filters(
+												'woocommerce_loop_add_to_cart_link',
+												sprintf(
+													'<a href="%s" data-quantity="1" class="%s" %s>%s</a>',
+													esc_url( $product->add_to_cart_url() ),
+													esc_attr( implode( ' ', array_filter( array( 'button', 'product_type_' . $product->get_type(), $product->is_purchasable() && $product->is_in_stock() ? 'add_to_cart_button' : '', $product->supports( 'ajax_add_to_cart' ) ? 'ajax_add_to_cart' : '' ) ) ) ),
+													wc_implode_html_attributes(
+														array(
+															'data-product_id'  => $product_id,
+															'data-product_sku' => $product->get_sku(),
+															'aria-label'       => $product->add_to_cart_description(),
+															'rel'              => 'nofollow',
+														)
+													),
+													esc_html( $product->add_to_cart_text() )
+												),
+												$product
+											);
+											?>
 
-									<?php if ( $personalization_url ) : ?>
-										<a class="ac-home-product__button ac-home-product__button--outline" href="<?php echo esc_url( $personalization_url ); ?>">Personnaliser</a>
-									<?php endif; ?>
-								</div>
-							</div>
-						</article>
-					<?php endforeach; ?>
+											<?php if ( $personalization_url ) : ?>
+												<a class="ac-home-product__button ac-home-product__button--outline" href="<?php echo esc_url( $personalization_url ); ?>">Personnaliser</a>
+											<?php endif; ?>
+										</div>
+									</div>
+								</article>
+							<?php endforeach; ?>
+						</div>
+					</div>
+
+					<button class="ac-home-products__arrow ac-home-products__arrow--next" type="button" aria-label="Produits suivants" data-ac-carousel-next>
+						<span aria-hidden="true">›</span>
+					</button>
 				</div>
 			<?php else : ?>
 				<p class="ac-home-products__empty">Ajoutez ou mettez en avant des produits WooCommerce pour les afficher ici.</p>

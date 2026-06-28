@@ -63,6 +63,33 @@ body:has(.anna-layout) .ct-container-narrow {
     padding-top: 0 !important;
 }
 
+body.anna-personnalisation-page,
+body:has(.anna-layout) {
+    background: var(--seeder-bg) !important;
+}
+
+body.anna-personnalisation-page #main,
+body.anna-personnalisation-page .site-main,
+body.anna-personnalisation-page .ct-container-full,
+body.anna-personnalisation-page article,
+body.anna-personnalisation-page .entry-content,
+body.anna-personnalisation-page .entry-content.is-layout-constrained,
+body:has(.anna-layout) #main,
+body:has(.anna-layout) .site-main,
+body:has(.anna-layout) .ct-container-full,
+body:has(.anna-layout) article,
+body:has(.anna-layout) .entry-content,
+body:has(.anna-layout) .entry-content.is-layout-constrained {
+    width: 100% !important;
+    max-width: none !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    gap: 0 !important;
+    row-gap: 0 !important;
+}
+
 body.anna-personnalisation-page .site-main,
 body:has(.anna-layout) .site-main {
     --theme-content-vertical-spacing: 0px;
@@ -77,6 +104,10 @@ body:has(.anna-layout) [class*="ct-container"] > article {
 
 body.anna-personnalisation-page .entry-content > .anna-layout,
 body:has(.anna-layout) .entry-content > .anna-layout {
+    width: 100vw !important;
+    max-width: none !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }

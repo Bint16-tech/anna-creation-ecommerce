@@ -2,14 +2,14 @@
 /**
  * Plugin Name: AnnaCreation - Style WooCommerce
  * Description: Style la boutique, les catégories produits et ajoute un lien de personnalisation administrable sur les produits WooCommerce.
- * Version: 1.1.0
+ * Version: 1.2.1
  * Author: AnnaCreation
  */
 
 defined( 'ABSPATH' ) || exit;
 
 function annacreation_wc_style_is_shop_context() {
-	return function_exists( 'is_woocommerce' ) && ( is_shop() || is_product_taxonomy() || is_product() );
+	return function_exists( 'is_woocommerce' ) && ( is_shop() || is_product_taxonomy() || is_product() || is_cart() );
 }
 
 function annacreation_wc_style_enqueue_assets() {
@@ -17,14 +17,25 @@ function annacreation_wc_style_enqueue_assets() {
 		return;
 	}
 
+	$style_path = plugin_dir_path( __FILE__ ) . 'assets/css/woocommerce-style.css';
+
 	wp_enqueue_style(
 		'annacreation-woocommerce-style',
 		plugin_dir_url( __FILE__ ) . 'assets/css/woocommerce-style.css',
 		array(),
-		'1.1.0'
+		file_exists( $style_path ) ? filemtime( $style_path ) : '1.2.1'
 	);
 }
 add_action( 'wp_enqueue_scripts', 'annacreation_wc_style_enqueue_assets', 30 );
+
+function annacreation_wc_style_cart_title( $title, $post_id = 0 ) {
+	if ( function_exists( 'wc_get_page_id' ) && (int) $post_id === (int) wc_get_page_id( 'cart' ) && 'Cart' === $title ) {
+		return 'Panier';
+	}
+
+	return $title;
+}
+add_filter( 'the_title', 'annacreation_wc_style_cart_title', 10, 2 );
 
 function annacreation_personalization_category_map() {
 	return array(

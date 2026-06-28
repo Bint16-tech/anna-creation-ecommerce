@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AnnaCreation - Page Contact
  * Description: Mise en page dédiée et stylisation de la page Contact AnnaCreation.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: AnnaCreation
  */
 
@@ -17,11 +17,13 @@ function annacreation_contact_enqueue_assets() {
 		return;
 	}
 
+	$style_path = plugin_dir_path( __FILE__ ) . 'assets/contact-page.css';
+
 	wp_enqueue_style(
 		'annacreation-contact-page',
 		plugin_dir_url( __FILE__ ) . 'assets/contact-page.css',
 		array(),
-		'1.1.0'
+		file_exists( $style_path ) ? filemtime( $style_path ) : '1.1.1'
 	);
 }
 add_action( 'wp_enqueue_scripts', 'annacreation_contact_enqueue_assets', 30 );
@@ -41,84 +43,204 @@ function annacreation_contact_disable_footer( $enabled ) {
 add_filter( 'blocksy:builder:footer:enabled', 'annacreation_contact_disable_footer' );
 
 /**
+ * Returns the default editable contact details.
+ *
+ * @return array<string, string>
+ */
+function annacreation_contact_default_settings() {
+	return array(
+		'address'    => 'France',
+		'hours'      => 'Lundi au samedi — Réponse sous 24h à 48h',
+		'email'      => 'contact@annacreation.fr',
+		'phone'      => 'À renseigner',
+		'whatsapp'   => 'À renseigner',
+		'intro_text' => 'Une question sur une création personnalisée ? Besoin d’aide pour composer votre modèle ? L’équipe AnnaCreation vous accompagne avec plaisir.',
+		'form_text'  => 'Nous vous répondrons rapidement pour vous accompagner dans votre commande personnalisée.',
+	);
+}
+
+/**
+ * Returns saved contact details with clean defaults for empty values.
+ *
+ * @return array<string, string>
+ */
+function annacreation_contact_get_settings() {
+	$defaults = annacreation_contact_default_settings();
+	$saved    = get_option( 'anna_contact_settings', array() );
+
+	if ( ! is_array( $saved ) ) {
+		$saved = array();
+	}
+
+	if ( empty( $saved ) ) {
+		$legacy_email = get_option( 'annacreation_contact_email', '' );
+		$legacy_phone = get_option( 'annacreation_contact_phone', '' );
+
+		if ( $legacy_email ) {
+			$saved['email'] = $legacy_email;
+		}
+
+		if ( $legacy_phone ) {
+			$saved['phone']    = $legacy_phone;
+			$saved['whatsapp'] = $legacy_phone;
+		}
+	}
+
+	$settings = wp_parse_args( $saved, $defaults );
+
+	foreach ( $defaults as $key => $default ) {
+		if ( '' === trim( (string) $settings[ $key ] ) ) {
+			$settings[ $key ] = $default;
+		}
+	}
+
+	return $settings;
+}
+
+/**
+ * Sanitizes editable contact details before saving.
+ *
+ * @param mixed $input Raw option value.
+ * @return array<string, string>
+ */
+function annacreation_contact_sanitize_settings( $input ) {
+	$defaults = annacreation_contact_default_settings();
+	$input    = is_array( $input ) ? $input : array();
+
+	return array(
+		'address'    => sanitize_textarea_field( $input['address'] ?? $defaults['address'] ),
+		'hours'      => sanitize_textarea_field( $input['hours'] ?? $defaults['hours'] ),
+		'email'      => sanitize_email( $input['email'] ?? $defaults['email'] ),
+		'phone'      => sanitize_text_field( $input['phone'] ?? $defaults['phone'] ),
+		'whatsapp'   => sanitize_text_field( $input['whatsapp'] ?? $defaults['whatsapp'] ),
+		'intro_text' => sanitize_textarea_field( $input['intro_text'] ?? $defaults['intro_text'] ),
+		'form_text'  => sanitize_textarea_field( $input['form_text'] ?? $defaults['form_text'] ),
+	);
+}
+
+/**
  * Registers the editable contact details.
  */
 function annacreation_contact_register_settings() {
 	register_setting(
-		'annacreation_contact',
-		'annacreation_contact_email',
+		'anna_contact_settings_group',
+		'anna_contact_settings',
 		array(
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_email',
-			'default'           => get_option( 'admin_email' ),
-		)
-	);
-
-	register_setting(
-		'annacreation_contact',
-		'annacreation_contact_phone',
-		array(
-			'type'              => 'string',
-			'sanitize_callback' => 'sanitize_text_field',
-			'default'           => '',
+			'type'              => 'array',
+			'sanitize_callback' => 'annacreation_contact_sanitize_settings',
+			'default'           => annacreation_contact_default_settings(),
 		)
 	);
 }
 add_action( 'admin_init', 'annacreation_contact_register_settings' );
 
 /**
- * Adds a simple settings screen under Settings.
+ * Adds the contact settings screen under the AnnaCreation admin menu.
  */
 function annacreation_contact_add_settings_page() {
-	add_options_page(
-		'Coordonnées AnnaCreation',
-		'Coordonnées AnnaCreation',
+	add_submenu_page(
+		'anna-creation',
+		'Coordonnées / Contact',
+		'Coordonnées / Contact',
 		'manage_options',
-		'annacreation-contact',
+		'anna-contact-settings',
 		'annacreation_contact_render_settings_page'
 	);
 }
-add_action( 'admin_menu', 'annacreation_contact_add_settings_page' );
+add_action( 'admin_menu', 'annacreation_contact_add_settings_page', 99 );
+
+function annacreation_contact_rename_admin_submenu() {
+	global $submenu;
+
+	if ( empty( $submenu['anna-creation'] ) ) {
+		return;
+	}
+
+	foreach ( $submenu['anna-creation'] as &$item ) {
+		if ( isset( $item[2] ) && 'anna-contact-settings' === $item[2] ) {
+			$item[0] = 'Coordonnées / Contact';
+		}
+	}
+	unset( $item );
+}
+add_action( 'admin_menu', 'annacreation_contact_rename_admin_submenu', 100 );
 
 function annacreation_contact_render_settings_page() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'Vous n’avez pas l’autorisation d’accéder à cette page.', 'annacreation' ) );
+	}
+
+	$settings = annacreation_contact_get_settings();
+	$fields   = array(
+		'address'    => array(
+			'label' => 'Adresse',
+			'type'  => 'textarea',
+			'rows'  => 2,
+		),
+		'hours'      => array(
+			'label' => 'Horaires',
+			'type'  => 'textarea',
+			'rows'  => 3,
+		),
+		'email'      => array(
+			'label' => 'Email',
+			'type'  => 'email',
+		),
+		'phone'      => array(
+			'label'       => 'Téléphone',
+			'type'        => 'text',
+			'placeholder' => '+33 6 12 34 56 78',
+		),
+		'whatsapp'   => array(
+			'label'       => 'WhatsApp',
+			'type'        => 'text',
+			'placeholder' => '+33 6 12 34 56 78',
+		),
+		'intro_text' => array(
+			'label' => 'Texte d’introduction de la page Contact',
+			'type'  => 'textarea',
+			'rows'  => 4,
+		),
+		'form_text'  => array(
+			'label' => 'Texte du formulaire',
+			'type'  => 'textarea',
+			'rows'  => 3,
+		),
+	);
 	?>
 	<div class="wrap">
-		<h1>Coordonnées AnnaCreation</h1>
-		<p>Ces informations sont affichées dans les cartes de la page Contact.</p>
+		<h1>Coordonnées / Contact</h1>
+		<p>Ces informations sont affichées sur la page Contact AnnaCreation.</p>
 
 		<form action="options.php" method="post">
-			<?php settings_fields( 'annacreation_contact' ); ?>
+			<?php settings_fields( 'anna_contact_settings_group' ); ?>
 			<table class="form-table" role="presentation">
-				<tr>
-					<th scope="row">
-						<label for="annacreation_contact_email">Email</label>
-					</th>
-					<td>
-						<input
-							id="annacreation_contact_email"
-							name="annacreation_contact_email"
-							type="email"
-							class="regular-text"
-							value="<?php echo esc_attr( get_option( 'annacreation_contact_email', get_option( 'admin_email' ) ) ); ?>"
-						>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="annacreation_contact_phone">Téléphone / WhatsApp</label>
-					</th>
-					<td>
-						<input
-							id="annacreation_contact_phone"
-							name="annacreation_contact_phone"
-							type="text"
-							class="regular-text"
-							placeholder="+33 6 12 34 56 78"
-							value="<?php echo esc_attr( get_option( 'annacreation_contact_phone', '' ) ); ?>"
-						>
-						<p class="description">Utilisez de préférence le format international, par exemple : +33 6 12 34 56 78.</p>
-					</td>
-				</tr>
+				<?php foreach ( $fields as $key => $field ) : ?>
+					<tr>
+						<th scope="row">
+							<label for="anna_contact_settings_<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $field['label'] ); ?></label>
+						</th>
+						<td>
+							<?php if ( 'textarea' === $field['type'] ) : ?>
+								<textarea
+									id="anna_contact_settings_<?php echo esc_attr( $key ); ?>"
+									name="anna_contact_settings[<?php echo esc_attr( $key ); ?>]"
+									class="large-text"
+									rows="<?php echo esc_attr( $field['rows'] ?? 3 ); ?>"
+								><?php echo esc_textarea( $settings[ $key ] ); ?></textarea>
+							<?php else : ?>
+								<input
+									id="anna_contact_settings_<?php echo esc_attr( $key ); ?>"
+									name="anna_contact_settings[<?php echo esc_attr( $key ); ?>]"
+									type="<?php echo esc_attr( $field['type'] ); ?>"
+									class="regular-text"
+									placeholder="<?php echo esc_attr( $field['placeholder'] ?? '' ); ?>"
+									value="<?php echo esc_attr( $settings[ $key ] ); ?>"
+								>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
 			</table>
 			<?php submit_button( 'Enregistrer les coordonnées' ); ?>
 		</form>
